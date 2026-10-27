@@ -1,5 +1,18 @@
 # MarkFont
 
+> **本仓库是二改版（Ning 二改自用版）**
+>
+> 基于 [Hmmzzz/MarkFont](https://github.com/Hmmzzz/MarkFont) v0.3.8，遵循 GPLv3。
+> 相对上游的主要改动：
+>
+> - 新增「挂载」Tab：把系统目录映射到 jbroot 中相同路径的目录（可读写，写入只影响副本），
+>   支持多条附加路径、自动复制系统内容、长按跳转源目录。
+> - 设置页的「挂载路径」改为只读的「默认字体路径 /System/Library/Fonts」。
+> - 全新浅色液态玻璃界面 + 自定义悬浮 Tab 栏（挂载 / 字体 / 字体库 / 设置）。
+> - 页脚署名改为「Ning二改自用版」。
+>
+> 上游的安装源、软件包请勿与本仓库产物混装。
+
 MarkFont 是一款面向 iOS 16–26 越狱设备的全局字体管理器，支持 conventional rootless 与
 RootHide。它将字体应用到与当前系统 build 绑定的工作镜像，再通过只读 bindfs mapping 提供给
 系统，不直接覆盖原始系统字体文件。
