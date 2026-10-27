@@ -1,0 +1,12 @@
+include ../Config.mk
+include $(THEOS)/makefiles/common.mk
+
+TOOL_NAME = markfont-bindfs
+
+markfont-bindfs_FILES = main.m ../shared/FMMountTarget.m ../shared/FMSystemFontLayout.m
+markfont-bindfs_LIBRARIES = $(MARKFONT_PATH_LIBRARIES)
+markfont-bindfs_CFLAGS = -fobjc-arc -Wall -Wextra $(MARKFONT_PATH_CFLAGS)
+markfont-bindfs_CODESIGN_FLAGS = -Sentitlements.plist
+markfont-bindfs_INSTALL_PATH = /usr/libexec
+
+include $(THEOS_MAKE_PATH)/tool.mk
