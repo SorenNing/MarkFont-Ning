@@ -106,7 +106,7 @@ UIView *FMGlassBackgroundView(void) {
 
 UIView *FMGlassCardView(void) {
     UIView *view = [[UIView alloc] initWithFrame:CGRectZero];
-    view.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.38];
+    view.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.32];
     view.layer.cornerRadius = 26;
     view.layer.cornerCurve = kCACornerCurveContinuous;
     view.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
@@ -158,4 +158,20 @@ void FMApplyAppearancePreferenceToWindow(UIWindow *window) {
     if (window == nil) return;
     window.overrideUserInterfaceStyle = FMFollowSystemAppearanceEnabled()
         ? UIUserInterfaceStyleUnspecified : UIUserInterfaceStyleLight;
+}
+
+
+UIButtonConfiguration *FMGlassButtonConfiguration(NSString *title,
+                                                    UIColor *tint,
+                                                    BOOL filled) {
+    UIButtonConfiguration *configuration = filled
+        ? [UIButtonConfiguration filledButtonConfiguration]
+        : [UIButtonConfiguration tintedButtonConfiguration];
+    configuration.title = title;
+    configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
+    configuration.baseBackgroundColor = filled
+        ? [tint colorWithAlphaComponent:0.78]
+        : [tint colorWithAlphaComponent:0.12];
+    configuration.baseForegroundColor = filled ? UIColor.whiteColor : tint;
+    return configuration;
 }

@@ -113,7 +113,9 @@ static inline void FMConfigureNavigationController(
 
     UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
     [appearance configureWithTransparentBackground];
-    appearance.backgroundColor = FMCanvasColor();
+    appearance.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.34];
+    appearance.backgroundEffect = [UIBlurEffect
+        effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight];
     appearance.shadowColor = UIColor.clearColor;
     appearance.largeTitleTextAttributes = @{
         NSForegroundColorAttributeName : UIColor.labelColor,

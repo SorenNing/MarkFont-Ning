@@ -781,7 +781,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
         [UIButtonConfiguration filledButtonConfiguration];
     configuration.title = FMLocalized(@"添加挂载路径");
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = FMAccentColor();
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.84];
     configuration.baseForegroundColor = UIColor.whiteColor;
     add.configuration = configuration;
     add.accessibilityIdentifier = @"settings_mount_path_add";
@@ -1304,7 +1304,7 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
     label.translatesAutoresizingMaskIntoConstraints = NO;
     NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
     if (version.length == 0) version = @"0.3.8";
-    label.text = [NSString stringWithFormat:FMLocalized(@"MarkFont · 版本 %@\nNing二改自用版"),
+    label.text = [NSString stringWithFormat:FMLocalized(@"MarkFont · 版本 %@\n由 Hmmzzz 设计与开发\nNing二改自用版"),
                                             version];
     label.textAlignment = NSTextAlignmentCenter;
     label.numberOfLines = 0;
@@ -1365,6 +1365,8 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
         [tableView dequeueReusableCellWithIdentifier:@"SettingsActionCell"
                                         forIndexPath:indexPath];
     cell.chevron.image = [UIImage systemImageNamed:@"chevron.right"];
+    cell.chevron.hidden = NO;
+    cell.accessoryView = nil;
     cell.accessibilityHint = nil;
     if (indexPath.section == FMSettingsSectionGeneral &&
         indexPath.row == 0) {
@@ -1376,7 +1378,8 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
                      destructive:NO];
         cell.accessibilityHint = FMLocalized(@"选择 App 的显示语言");
         cell.accessibilityIdentifier = @"settings_language";
-    } else if (indexPath.section == FMSettingsSectionGeneral) {
+    } else if (indexPath.section == FMSettingsSectionGeneral &&
+               indexPath.row == 1) {
         [cell configureWithTitle:FMLocalized(@"默认字体路径")
                         subtitle:@"/System/Library/Fonts"
                           symbol:@"folder"

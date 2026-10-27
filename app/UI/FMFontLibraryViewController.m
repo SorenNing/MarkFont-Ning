@@ -258,9 +258,9 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
     UIFont *previewLatinFont = FMPreviewFontAtPath(previewLatinFontPath, 19);
     UIFont *specimenFont = previewFont ?: FMRepresentativeFont(profileID, 34, UIFontWeightBold);
     UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 260)];
-    UIView *card = [[UIView alloc] initWithFrame:CGRectZero];
+    UIView *card = FMGlassCardView();
     card.translatesAutoresizingMaskIntoConstraints = NO;
-    card.backgroundColor = FMProfileGradientColors(profileID, self.traitCollection).firstObject;
+    card.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.34];
     card.layer.cornerRadius = 25;
     card.layer.cornerCurve = kCACornerCurveContinuous;
     [header addSubview:card];
@@ -394,8 +394,8 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = FMPrimaryActionColor();
-            configuration.baseForegroundColor = FMPrimaryActionForegroundColor();
+            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+            configuration.baseForegroundColor = UIColor.whiteColor;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
             configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
@@ -413,8 +413,8 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = FMPrimaryActionColor();
-        configuration.baseForegroundColor = FMPrimaryActionForegroundColor();
+        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+        configuration.baseForegroundColor = UIColor.whiteColor;
     }
     self.applyButton.configuration = configuration;
     [self.applyButton addTarget:self action:@selector(applyScheme:)
@@ -891,7 +891,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 7;
-    configuration.baseBackgroundColor = FMAccentColor();
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.84];
     configuration.baseForegroundColor = UIColor.whiteColor;
     NSUInteger conflicts = [self.preview[@"conflictTargetCount"] unsignedIntegerValue];
     NSUInteger matched = [self.preview[@"matchedTargetCount"] unsignedIntegerValue];
@@ -1373,8 +1373,8 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
         mixConfiguration.image = [UIImage systemImageNamed:@"wand.and.stars"];
         mixConfiguration.imagePadding = 7;
         mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-        mixConfiguration.baseBackgroundColor = FMAccentColor();
-        mixConfiguration.baseForegroundColor = UIColor.whiteColor;
+        mixConfiguration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.18];
+        mixConfiguration.baseForegroundColor = FMAccentColor();
         mixButton.configuration = mixConfiguration;
         [mixButton addTarget:self action:@selector(openMixComposer:)
             forControlEvents:UIControlEventTouchUpInside];

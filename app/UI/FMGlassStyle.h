@@ -16,6 +16,9 @@ UIView *FMGlassBackgroundView(void);
 
 // Translucent frosted card with a hairline highlight border.
 UIView *FMGlassCardView(void);
+UIButtonConfiguration *FMGlassButtonConfiguration(NSString *title,
+                                                    UIColor *tint,
+                                                    BOOL filled);
 
 // Appearance preference. When enabled (default) the app follows the system
 // light/dark setting; otherwise it stays in the light appearance.

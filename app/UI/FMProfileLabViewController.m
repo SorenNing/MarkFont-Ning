@@ -440,6 +440,11 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     self.view.backgroundColor = UIColor.clearColor;
     self.view.accessibilityViewIsModal = YES;
 
+    UIView *glassCard = FMGlassCardView();
+    glassCard.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:glassCard];
+    UIView *contentView = glassCard;
+
     UIView *iconBackground = [[UIView alloc] initWithFrame:CGRectZero];
     iconBackground.translatesAutoresizingMaskIntoConstraints = NO;
     iconBackground.backgroundColor = FMTintedBackground(FMSuccessColor());
@@ -481,11 +486,11 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     header.axis = UILayoutConstraintAxisHorizontal;
     header.alignment = UIStackViewAlignmentCenter;
     header.spacing = 16;
-    [self.view addSubview:header];
+    [contentView addSubview:header];
 
     UIView *step = [[UIView alloc] initWithFrame:CGRectZero];
     step.translatesAutoresizingMaskIntoConstraints = NO;
-    [self.view addSubview:step];
+    [contentView addSubview:step];
 
     UIImageView *restartIcon = [[UIImageView alloc]
         initWithImage:[UIImage systemImageNamed:@"arrow.clockwise"]];
@@ -520,37 +525,36 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     FMPressableButton *primary = [FMPressableButton buttonWithType:UIButtonTypeSystem];
     primary.translatesAutoresizingMaskIntoConstraints = NO;
     primary.accessibilityIdentifier = @"profile_respring_and_apply";
-    UIButtonConfiguration *primaryConfiguration = [UIButtonConfiguration filledButtonConfiguration];
-    primaryConfiguration.title = @"Respring";
+    UIButtonConfiguration *primaryConfiguration = FMGlassButtonConfiguration(@"Respring", FMGlassAccentColor(), YES);
     primaryConfiguration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
     primaryConfiguration.imagePadding = 8;
-    primaryConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    primaryConfiguration.baseBackgroundColor = FMPrimaryActionColor();
-    primaryConfiguration.baseForegroundColor = FMPrimaryActionForegroundColor();
     primary.configuration = primaryConfiguration;
     [primary addTarget:self action:@selector(respringNow:)
       forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:primary];
+    [contentView addSubview:primary];
 
     UIButton *later = [UIButton buttonWithType:UIButtonTypeSystem];
     later.translatesAutoresizingMaskIntoConstraints = NO;
     [later setTitle:FMLocalized(@"稍后 Respring") forState:UIControlStateNormal];
     [later addTarget:self action:@selector(dismissLater:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:later];
+    [contentView addSubview:later];
 
     [NSLayoutConstraint activateConstraints:@[
-        [header.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor
-                                          constant:22],
-        [header.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:24],
-        [header.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-24],
+        [contentView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
+        [contentView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [contentView.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:10],
+        [contentView.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-10],
+        [header.topAnchor constraintEqualToAnchor:contentView.topAnchor constant:18],
+        [header.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:18],
+        [header.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-18],
         [iconBackground.widthAnchor constraintEqualToConstant:56],
         [iconBackground.heightAnchor constraintEqualToConstant:56],
         [icon.centerXAnchor constraintEqualToAnchor:iconBackground.centerXAnchor],
         [icon.centerYAnchor constraintEqualToAnchor:iconBackground.centerYAnchor],
 
         [step.topAnchor constraintEqualToAnchor:header.bottomAnchor constant:16],
-        [step.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:24],
-        [step.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-24],
+        [step.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:18],
+        [step.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-18],
         [step.heightAnchor constraintGreaterThanOrEqualToConstant:72],
         [restartIcon.leadingAnchor constraintEqualToAnchor:step.leadingAnchor],
         [restartIcon.centerYAnchor constraintEqualToAnchor:step.centerYAnchor],
@@ -562,12 +566,12 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         [stepText.topAnchor constraintGreaterThanOrEqualToAnchor:step.topAnchor],
         [stepText.bottomAnchor constraintLessThanOrEqualToAnchor:step.bottomAnchor],
 
-        [primary.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [primary.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
+        [primary.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:18],
+        [primary.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-18],
         [primary.heightAnchor constraintEqualToConstant:54],
         [primary.bottomAnchor constraintEqualToAnchor:later.topAnchor constant:-5],
-        [later.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:20],
-        [later.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-20],
+        [later.leadingAnchor constraintEqualToAnchor:contentView.leadingAnchor constant:18],
+        [later.trailingAnchor constraintEqualToAnchor:contentView.trailingAnchor constant:-18],
         [later.heightAnchor constraintEqualToConstant:38],
         [later.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
                                             constant:-6],
@@ -1100,8 +1104,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = FMPrimaryActionColor();
-            configuration.baseForegroundColor = FMPrimaryActionForegroundColor();
+            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+            configuration.baseForegroundColor = UIColor.whiteColor;
             self.applyButton.enabled = YES;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
@@ -1126,8 +1130,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = FMPrimaryActionColor();
-        configuration.baseForegroundColor = FMPrimaryActionForegroundColor();
+        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+        configuration.baseForegroundColor = UIColor.whiteColor;
         self.applyButton.enabled = YES;
     }
     self.applyButton.configuration = configuration;
@@ -1208,18 +1212,19 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
 - (void)showSuccessToastWithName:(NSString *)name {
     UIView *toast = FMCardView();
     toast.translatesAutoresizingMaskIntoConstraints = NO;
-    toast.backgroundColor = FMPrimaryActionColor();
-    toast.layer.borderWidth = 0;
+    toast.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.78];
+    toast.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+    toast.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
     toast.accessibilityIdentifier = @"profile_success";
 
     UIImageView *icon = [[UIImageView alloc]
         initWithImage:[UIImage systemImageNamed:@"checkmark.circle.fill"]];
     icon.translatesAutoresizingMaskIntoConstraints = NO;
-    icon.tintColor = FMPrimaryActionForegroundColor();
+    icon.tintColor = FMGlassAccentColor();
     [toast addSubview:icon];
 
     UILabel *label = FMLabel(UIFontTextStyleSubheadline, UIFontWeightSemibold,
-                             FMPrimaryActionForegroundColor());
+                             UIColor.labelColor);
     label.translatesAutoresizingMaskIntoConstraints = NO;
     label.text = [NSString stringWithFormat:FMLocalized(@"已切换到 %@"), name];
     label.numberOfLines = 1;

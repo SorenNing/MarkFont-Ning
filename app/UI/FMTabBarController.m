@@ -261,7 +261,7 @@
             [stackBackground.bottomAnchor constraintEqualToAnchor:navigation.view.bottomAnchor],
         ]];
         navigation.view.backgroundColor = UIColor.clearColor;
-        navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 92, 0);
+        navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 86, 0);
         navigation.view.translatesAutoresizingMaskIntoConstraints = NO;
         [self addChildViewController:navigation];
         [self.view addSubview:navigation.view];
@@ -287,8 +287,8 @@
         [self.tabBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
         [self.tabBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
         [self.tabBar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
-                                                 constant:-4],
-        [self.tabBar.heightAnchor constraintEqualToConstant:70],
+                                                 constant:-14],
+        [self.tabBar.heightAnchor constraintEqualToConstant:66],
     ]];
 
     [self installSwipeGestures];
