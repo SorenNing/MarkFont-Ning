@@ -437,7 +437,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = FMCanvasColor();
+    self.view.backgroundColor = UIColor.clearColor;
     self.view.accessibilityViewIsModal = YES;
 
     UIView *iconBackground = [[UIView alloc] initWithFrame:CGRectZero];
@@ -628,7 +628,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = UIColor.clearColor;
-    self.navigationItem.title = @"";
+    self.navigationItem.title = FMLocalized(@"字体");
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.navigationController.navigationBar.prefersLargeTitles = NO;
 
     FMPressableButton *settingsButton = [FMPressableButton buttonWithType:UIButtonTypeSystem];
@@ -768,7 +769,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     self.titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     self.titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
     self.titleLabel.text = @"MarkFont";
-    self.titleLabel.font = [UIFont systemFontOfSize:38 weight:UIFontWeightBold];
+    self.titleLabel.font = [UIFont systemFontOfSize:30 weight:UIFontWeightBold];
     self.titleLabel.textColor = UIColor.labelColor;
     [self.contentView addSubview:self.titleLabel];
 

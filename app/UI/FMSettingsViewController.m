@@ -24,7 +24,8 @@ static UIView *FMSettingsSectionHeaderView(NSString *title) {
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:22],
         [label.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-20],
-        [label.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:-5],
+        [label.heightAnchor constraintEqualToConstant:16],
+        [label.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:-6],
     ]];
     return view;
 }
@@ -476,7 +477,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     [super viewDidLoad];
     self.title = FMLocalized(@"免责声明");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.view.backgroundColor = FMCanvasColor();
+    self.view.backgroundColor = UIColor.clearColor;
 
     UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectZero];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -1032,7 +1033,8 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:view.leadingAnchor constant:22],
         [label.trailingAnchor constraintEqualToAnchor:view.trailingAnchor constant:-20],
-        [label.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:-5],
+        [label.heightAnchor constraintEqualToConstant:16],
+        [label.bottomAnchor constraintEqualToAnchor:view.bottomAnchor constant:-6],
     ]];
     return view;
 }
@@ -1146,7 +1148,8 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"";
+    self.title = FMLocalized(@"设置");
+    self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.navigationItem.backButtonDisplayMode = UINavigationItemBackButtonDisplayModeMinimal;
     self.navigationController.navigationBar.prefersLargeTitles = NO;
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
@@ -1174,7 +1177,6 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
            forCellReuseIdentifier:@"SettingsActionCell"];
     [self.tableView registerClass:FMSettingsToggleCell.class
            forCellReuseIdentifier:@"SettingsToggleCell"];
-    self.tableView.tableHeaderView = [self makeGlassHeader];
     self.tableView.tableFooterView = [self makeAboutFooter];
     [self reloadAutomaticRespringPolicy];
 }
@@ -1201,6 +1203,11 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
         footer.frame = frame;
         self.tableView.tableFooterView = footer;
     }
+}
+
+- (void)appearanceSwitchChanged:(UISwitch *)sender {
+    FMSetFollowSystemAppearanceEnabled(sender.isOn);
+    [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
 }
 
 - (void)refreshAutomaticRespringCellIfVisible {
@@ -1290,38 +1297,6 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
     });
 }
 
-- (UIView *)makeGlassHeader {
-    UIView *header = [[UIView alloc] initWithFrame:
-        CGRectMake(0, 0, self.view.bounds.size.width, 116)];
-    UILabel *eyebrow = FMLabel(UIFontTextStyleCaption1, UIFontWeightBold,
-                               FMAccentColor());
-    eyebrow.translatesAutoresizingMaskIntoConstraints = NO;
-    eyebrow.text = @"MARKFONT";
-    UILabel *title = FMLabel(UIFontTextStyleLargeTitle, UIFontWeightBold,
-                             UIColor.labelColor);
-    title.translatesAutoresizingMaskIntoConstraints = NO;
-    title.text = FMLocalized(@"设置");
-    title.font = [UIFont systemFontOfSize:34 weight:UIFontWeightBold];
-    UILabel *subtitle = FMLabel(UIFontTextStyleFootnote, UIFontWeightRegular,
-                                UIColor.secondaryLabelColor);
-    subtitle.translatesAutoresizingMaskIntoConstraints = NO;
-    subtitle.text = FMLocalized(@"先预览，再把喜欢的样子用到整个系统。");
-    [header addSubview:eyebrow];
-    [header addSubview:title];
-    [header addSubview:subtitle];
-    [NSLayoutConstraint activateConstraints:@[
-        [eyebrow.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:22],
-        [eyebrow.topAnchor constraintEqualToAnchor:header.topAnchor constant:4],
-        [title.leadingAnchor constraintEqualToAnchor:eyebrow.leadingAnchor],
-        [title.trailingAnchor constraintLessThanOrEqualToAnchor:header.trailingAnchor constant:-20],
-        [title.topAnchor constraintEqualToAnchor:eyebrow.bottomAnchor constant:2],
-        [subtitle.leadingAnchor constraintEqualToAnchor:title.leadingAnchor],
-        [subtitle.trailingAnchor constraintEqualToAnchor:header.trailingAnchor constant:-20],
-        [subtitle.topAnchor constraintEqualToAnchor:title.bottomAnchor constant:3],
-    ]];
-    return header;
-}
-
 - (UIView *)makeAboutFooter {
     UIView *footer = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 82)];
     UILabel *label = FMLabel(UIFontTextStyleCaption1, UIFontWeightMedium,
@@ -1350,7 +1325,7 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     (void)tableView;
     if (section == FMSettingsSectionAbout) return 3;
-    if (section == FMSettingsSectionGeneral) return 2;
+    if (section == FMSettingsSectionGeneral) return 3;
     return 1;
 }
 
@@ -1411,6 +1386,24 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
         cell.chevron.hidden = YES;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         cell.accessibilityIdentifier = @"settings_default_font_path";
+    } else if (indexPath.section == FMSettingsSectionGeneral &&
+               indexPath.row == 2) {
+        [cell configureWithTitle:FMLocalized(@"跟随系统深浅模式")
+                        subtitle:FMLocalized(@"关闭后固定使用浅色外观")
+                          symbol:@"circle.lefthalf.filled"
+                           color:FMAccentColor()
+                      disclosure:NO
+                     destructive:NO];
+        cell.chevron.hidden = YES;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        cell.accessibilityIdentifier = @"settings_follow_system_appearance";
+        UISwitch *appearanceSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
+        appearanceSwitch.onTintColor = FMAccentColor();
+        appearanceSwitch.on = FMFollowSystemAppearanceEnabled();
+        [appearanceSwitch addTarget:self
+                             action:@selector(appearanceSwitchChanged:)
+                   forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = appearanceSwitch;
     } else if (indexPath.section == FMSettingsSectionDevice) {
         [cell configureWithTitle:FMLocalized(@"运行环境")
                         subtitle:FMLocalized(@"查看组件、字体连接与恢复准备")

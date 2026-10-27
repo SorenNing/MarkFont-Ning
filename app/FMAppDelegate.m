@@ -29,7 +29,7 @@
 
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     self.window.tintColor = FMAccentColor();
-    self.window.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
+    FMApplyAppearancePreferenceToWindow(self.window);
 
     [NSNotificationCenter.defaultCenter
         addObserver:self

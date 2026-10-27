@@ -18,8 +18,8 @@ static inline UIColor *FMColorRGB(CGFloat red, CGFloat green, CGFloat blue) {
 static inline UIColor *FMAccentColor(void) {
     return [UIColor colorWithDynamicProvider:^UIColor *(UITraitCollection *traits) {
         return traits.userInterfaceStyle == UIUserInterfaceStyleDark
-                   ? FMColorRGB(255, 145, 111)
-                   : FMColorRGB(222, 91, 58);
+                   ? FMColorRGB(255, 154, 122)
+                   : FMColorRGB(232, 104, 63);
     }];
 }
 

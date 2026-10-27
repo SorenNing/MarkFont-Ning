@@ -339,8 +339,8 @@ static NSDictionary<NSString *, id> *FMEnvironmentItem(
     [super viewDidLoad];
     self.title = FMLocalized(@"运行环境");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.view.backgroundColor = FMCanvasColor();
-    self.tableView.backgroundColor = FMCanvasColor();
+    self.view.backgroundColor = UIColor.clearColor;
+    self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 84;

@@ -69,10 +69,10 @@ static NSUInteger FMMixCoveredPathCount(
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = FMCanvasColor();
+    self.view.backgroundColor = UIColor.clearColor;
     self.title = FMLocalized(@"混搭字体");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = FMCanvasColor();
+    self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 64;
     self.tableView.accessibilityIdentifier = @"mix_font_slots";
@@ -694,7 +694,7 @@ static NSUInteger FMMixCoveredPathCount(
         ? [NSString stringWithFormat:FMLocalized(@"选择方案 · %@"), self.slot[@"name"]]
         : FMLocalized(@"选择兜底方案");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = FMCanvasColor();
+    self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 60;
     self.tableView.accessibilityIdentifier = @"mix_scheme_picker";

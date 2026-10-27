@@ -659,7 +659,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     [super viewDidLoad];
     self.title = FMLocalized(@"匹配结果");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
-    self.tableView.backgroundColor = FMCanvasColor();
+    self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 66;
     self.tableView.accessibilityIdentifier = @"font_package_preview";
@@ -1218,7 +1218,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
 
     self.tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
     self.tableView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.tableView.backgroundColor = FMCanvasColor();
+    self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.dataSource = self;
     self.tableView.delegate = self;
@@ -1339,6 +1339,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     button.accessibilityIdentifier = @"profile_import";
     UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
     configuration.title = FMLocalized(@"选择字体包");
+    configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.image = [UIImage systemImageNamed:@"doc.badge.plus"];
     configuration.imagePadding = 7;
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
@@ -1365,6 +1366,10 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
         UIButtonConfiguration *mixConfiguration =
             [UIButtonConfiguration filledButtonConfiguration];
         mixConfiguration.title = FMLocalized(@"创建混搭方案");
+        mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
+        mixConfiguration.baseBackgroundColor = [FMAccentColor()
+            colorWithAlphaComponent:0.14];
+        mixConfiguration.baseForegroundColor = FMAccentColor();
         mixConfiguration.image = [UIImage systemImageNamed:@"wand.and.stars"];
         mixConfiguration.imagePadding = 7;
         mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
@@ -1486,7 +1491,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     NSString *title = [self tableView:tableView titleForHeaderInSection:section];
     if (title == nil) return nil;
     UIView *view = [[UIView alloc] initWithFrame:CGRectZero];
-    view.backgroundColor = FMCanvasColor();
+    view.backgroundColor = UIColor.clearColor;
     UILabel *label = FMLabel(UIFontTextStyleCaption1, UIFontWeightSemibold,
                              UIColor.secondaryLabelColor);
     label.translatesAutoresizingMaskIntoConstraints = NO;

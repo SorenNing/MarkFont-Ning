@@ -239,9 +239,7 @@
             [weakSelf switchToIndex:1 animated:NO];
             [weakSelf.fontController applyProfileFromLibrary:profileID];
         }
-                                             dismissalHandler:^{
-            [weakSelf switchToIndex:1 animated:NO];
-        }];
+                                             dismissalHandler:nil];
     FMSettingsViewController *settings =
         [[FMSettingsViewController alloc] initWithWorkspace:self.workspace
                                            dismissalHandler:nil];
@@ -253,6 +251,15 @@
         UINavigationController *navigation =
             [[UINavigationController alloc] initWithRootViewController:root];
         FMConfigureNavigationController(navigation);
+        UIView *stackBackground = FMGlassBackgroundView();
+        stackBackground.translatesAutoresizingMaskIntoConstraints = NO;
+        [navigation.view insertSubview:stackBackground atIndex:0];
+        [NSLayoutConstraint activateConstraints:@[
+            [stackBackground.leadingAnchor constraintEqualToAnchor:navigation.view.leadingAnchor],
+            [stackBackground.trailingAnchor constraintEqualToAnchor:navigation.view.trailingAnchor],
+            [stackBackground.topAnchor constraintEqualToAnchor:navigation.view.topAnchor],
+            [stackBackground.bottomAnchor constraintEqualToAnchor:navigation.view.bottomAnchor],
+        ]];
         navigation.view.backgroundColor = UIColor.clearColor;
         navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 92, 0);
         navigation.view.translatesAutoresizingMaskIntoConstraints = NO;
@@ -284,7 +291,34 @@
         [self.tabBar.heightAnchor constraintEqualToConstant:70],
     ]];
 
+    [self installSwipeGestures];
     [self switchToIndex:self.selectedIndex animated:NO];
+}
+
+- (void)installSwipeGestures {
+    UISwipeGestureRecognizer *left = [[UISwipeGestureRecognizer alloc]
+        initWithTarget:self action:@selector(handleTabSwipe:)];
+    left.direction = UISwipeGestureRecognizerDirectionLeft;
+    UISwipeGestureRecognizer *right = [[UISwipeGestureRecognizer alloc]
+        initWithTarget:self action:@selector(handleTabSwipe:)];
+    right.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:left];
+    [self.view addGestureRecognizer:right];
+}
+
+- (void)handleTabSwipe:(UISwipeGestureRecognizer *)gesture {
+    UINavigationController *current = self.controllers[(NSUInteger)self.selectedIndex];
+    if (current.viewControllers.count > 1) {
+        // Inside a pushed page the same swipe means "go back".
+        if (gesture.direction == UISwipeGestureRecognizerDirectionRight) {
+            [current popViewControllerAnimated:YES];
+        }
+        return;
+    }
+    NSInteger delta = gesture.direction == UISwipeGestureRecognizerDirectionLeft ? 1 : -1;
+    NSInteger next = self.selectedIndex + delta;
+    if (next < 0 || next >= (NSInteger)self.controllers.count) return;
+    [self switchToIndex:next animated:YES];
 }
 
 - (void)viewDidAppear:(BOOL)animated {

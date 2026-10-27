@@ -17,4 +17,10 @@ UIView *FMGlassBackgroundView(void);
 // Translucent frosted card with a hairline highlight border.
 UIView *FMGlassCardView(void);
 
+// Appearance preference. When enabled (default) the app follows the system
+// light/dark setting; otherwise it stays in the light appearance.
+BOOL FMFollowSystemAppearanceEnabled(void);
+void FMSetFollowSystemAppearanceEnabled(BOOL enabled);
+void FMApplyAppearancePreferenceToWindow(UIWindow *window);
+
 NS_ASSUME_NONNULL_END
