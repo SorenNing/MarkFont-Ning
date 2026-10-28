@@ -238,7 +238,7 @@ int main(int argc, const char *argv[]) {
     @autoreleasepool {
         umask(077);
         if (argc == 2 && strcmp(argv[1], "--version") == 0) {
-            fprintf(stdout, "fontmanagerd 0.3.8\n");
+            fprintf(stdout, "fontmanagerd 0.3.9\n");
             return 0;
         }
 

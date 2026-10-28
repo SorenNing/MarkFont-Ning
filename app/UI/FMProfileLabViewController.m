@@ -144,11 +144,16 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     [self addSubview:_decorativeGlyph];
 
     _previewBadge = FMLabel(UIFontTextStyleCaption1, UIFontWeightSemibold,
-                            FMColorRGB(31, 38, 34));
+                            UIColor.labelColor);
     _previewBadge.translatesAutoresizingMaskIntoConstraints = NO;
     _previewBadge.text = FMLocalized(@"实时预览");
     _previewBadge.textAlignment = NSTextAlignmentCenter;
-    _previewBadge.backgroundColor = [UIColor.whiteColor colorWithAlphaComponent:0.52];
+    _previewBadge.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.16]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
     _previewBadge.layer.cornerRadius = 12;
     _previewBadge.layer.cornerCurve = kCACornerCurveContinuous;
     _previewBadge.layer.masksToBounds = YES;
@@ -838,15 +843,36 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     dockBlur.clipsToBounds = YES;
     dockBlur.userInteractionEnabled = NO;
     [self.actionDock addSubview:dockBlur];
+
+    UIView *dockFill = [[UIView alloc] initWithFrame:CGRectZero];
+    dockFill.translatesAutoresizingMaskIntoConstraints = NO;
+    dockFill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
+    dockFill.layer.cornerRadius = 26;
+    dockFill.layer.cornerCurve = kCACornerCurveContinuous;
+    dockFill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    dockFill.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.55].CGColor;
+    dockFill.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockFill];
+
     [NSLayoutConstraint activateConstraints:@[
         [dockBlur.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [dockBlur.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
         [dockBlur.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [dockBlur.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+        [dockFill.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockFill.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockFill.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockFill.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
     ]];
 
     self.applyButton = [FMPressableButton buttonWithType:UIButtonTypeSystem];
     self.applyButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.applyButton setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     self.applyButton.accessibilityIdentifier = @"profile_apply";
     [self.applyButton addTarget:self
                          action:@selector(applySelectedProfile:)
@@ -913,6 +939,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
                                                      constant:-6],
         [self.applyButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [self.applyButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [self.applyButton.widthAnchor constraintEqualToAnchor:self.actionDock.widthAnchor],
         [self.applyButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [self.applyButton.heightAnchor constraintEqualToConstant:52],
         [self.applyButton.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
@@ -1108,48 +1135,49 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     }
 
     BOOL selectedIsConfirmed = FMProfileIDsEqual(profileID, confirmedID);
-    UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 8;
+    configuration.background.backgroundColor = UIColor.clearColor;
     if (self.workspaceError.length > 0) {
         BOOL recovering = self.workspaceRecoveryTimer != nil;
         configuration.title = recovering ? FMLocalized(@"正在恢复字体连接…") : FMLocalized(@"字体库暂时不可用");
         configuration.image = [UIImage systemImageNamed:
             recovering ? @"arrow.clockwise" : @"exclamationmark.triangle"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else if (restartRequired && selectedIsWorking) {
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+            configuration.baseBackgroundColor = UIColor.clearColor;
             configuration.baseForegroundColor = UIColor.labelColor;
             self.applyButton.enabled = YES;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
             configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
-            configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+            configuration.baseBackgroundColor = UIColor.clearColor;
             configuration.baseForegroundColor = UIColor.secondaryLabelColor;
             self.applyButton.enabled = NO;
         }
     } else if (!restartRequired && selectedIsConfirmed) {
         configuration.title = [NSString stringWithFormat:FMLocalized(@"正在使用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"checkmark.circle.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else if (!self.workspace.allowsChanges) {
         configuration.title = FMLocalized(@"当前版本仅可查看");
         configuration.image = [UIImage systemImageNamed:@"eye.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else {
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.labelColor;
         self.applyButton.enabled = YES;
     }

@@ -381,17 +381,43 @@ static NSUInteger FMMixCoveredPathCount(
     self.actionDock.userInteractionEnabled = YES;
     [self.view addSubview:self.actionDock];
 
+    UIVisualEffectView *dockBlur = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect
+            effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
+    dockBlur.translatesAutoresizingMaskIntoConstraints = NO;
+    dockBlur.layer.cornerRadius = 26;
+    dockBlur.layer.cornerCurve = kCACornerCurveContinuous;
+    dockBlur.clipsToBounds = YES;
+    dockBlur.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockBlur];
+
+    UIView *dockFill = [[UIView alloc] initWithFrame:CGRectZero];
+    dockFill.translatesAutoresizingMaskIntoConstraints = NO;
+    dockFill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
+    dockFill.layer.cornerRadius = 26;
+    dockFill.layer.cornerCurve = kCACornerCurveContinuous;
+    dockFill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    dockFill.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.55].CGColor;
+    dockFill.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockFill];
+
     self.saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.saveButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.saveButton setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     self.saveButton.accessibilityIdentifier = @"mix_save";
     UIButtonConfiguration *configuration =
-        [UIButtonConfiguration filledButtonConfiguration];
+        [UIButtonConfiguration plainButtonConfiguration];
     configuration.title = FMLocalized(@"保存混搭方案");
     configuration.image = [UIImage systemImageNamed:@"sparkles"];
     configuration.imagePadding = 7;
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = FMPrimaryActionColor();
-    configuration.baseForegroundColor = FMPrimaryActionForegroundColor();
+    configuration.background.backgroundColor = UIColor.clearColor;
+    configuration.baseForegroundColor = UIColor.labelColor;
     self.saveButton.configuration = configuration;
     [self.saveButton addTarget:self action:@selector(saveMixTapped:)
                forControlEvents:UIControlEventTouchUpInside];
@@ -405,21 +431,24 @@ static NSUInteger FMMixCoveredPathCount(
     self.tableView.verticalScrollIndicatorInsets = indicatorInsets;
 
     [NSLayoutConstraint activateConstraints:@[
-        [self.actionDock.leadingAnchor
-            constraintEqualToAnchor:self.tableView.frameLayoutGuide.leadingAnchor],
-        [self.actionDock.trailingAnchor
-            constraintEqualToAnchor:self.tableView.frameLayoutGuide.trailingAnchor],
-        [self.actionDock.bottomAnchor
-            constraintEqualToAnchor:self.tableView.frameLayoutGuide.bottomAnchor],
-        [self.saveButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor
-                                                        constant:20],
-        [self.saveButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor
-                                                         constant:-20],
-        [self.saveButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor
-                                                  constant:14],
-        [self.saveButton.heightAnchor constraintEqualToConstant:54],
-        [self.saveButton.bottomAnchor
-            constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-12],
+        [dockBlur.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockBlur.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockBlur.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockBlur.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+        [dockFill.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockFill.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockFill.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockFill.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+        [self.actionDock.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
+        [self.actionDock.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [self.actionDock.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
+                                                     constant:-6],
+        [self.saveButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [self.saveButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [self.saveButton.widthAnchor constraintEqualToAnchor:self.actionDock.widthAnchor],
+        [self.saveButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [self.saveButton.heightAnchor constraintEqualToConstant:52],
+        [self.saveButton.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
     ]];
 }
 

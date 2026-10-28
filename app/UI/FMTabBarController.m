@@ -128,14 +128,12 @@
                 ? [UIColor colorWithWhite:0.25 alpha:0.92]
                 : [UIColor colorWithWhite:1.0 alpha:0.88];
         }];
-    _pill.layer.cornerRadius = 29;
+    _pill.layer.cornerRadius = 25;
     _pill.layer.cornerCurve = kCACornerCurveContinuous;
-    _pill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
-    _pill.layer.borderColor = UIColor.whiteColor.CGColor;
-    _pill.layer.shadowColor = FMGlassAccentColor().CGColor;
-    _pill.layer.shadowOpacity = 0.16;
-    _pill.layer.shadowRadius = 10;
-    _pill.layer.shadowOffset = CGSizeMake(0, 4);
+    _pill.layer.shadowColor = [UIColor colorWithWhite:0.35 alpha:1.0].CGColor;
+    _pill.layer.shadowOpacity = 0.08;
+    _pill.layer.shadowRadius = 8;
+    _pill.layer.shadowOffset = CGSizeMake(0, 3);
     _pill.userInteractionEnabled = NO;
     [self addSubview:_pill];
 
@@ -172,7 +170,7 @@
         (void)stop;
         item.frame = CGRectMake(width * index, 7.0, width, self.bounds.size.height - 14.0);
     }];
-    _pill.frame = CGRectInset(_items[(NSUInteger)_selectedIndex].frame, 7, 7);
+    _pill.frame = CGRectInset(_items[(NSUInteger)_selectedIndex].frame, 4, 4);
 }
 
 - (void)itemTapped:(FMTabItemView *)sender {
@@ -196,7 +194,7 @@
         [item setSelected:(NSInteger)itemIndex == index];
     }];
     void (^updates)(void) = ^{
-        self->_pill.frame = CGRectInset(self->_items[(NSUInteger)index].frame, 7, 7);
+        self->_pill.frame = CGRectInset(self->_items[(NSUInteger)index].frame, 4, 4);
     };
     if (animated && !UIAccessibilityIsReduceMotionEnabled()) {
         [UIView animateWithDuration:0.32
@@ -271,7 +269,7 @@
             [stackBackground.bottomAnchor constraintEqualToAnchor:navigation.view.bottomAnchor],
         ]];
         navigation.view.backgroundColor = UIColor.clearColor;
-        navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 86, 0);
+        navigation.additionalSafeAreaInsets = UIEdgeInsetsMake(0, 0, 100, 0);
         navigation.view.translatesAutoresizingMaskIntoConstraints = NO;
         [self addChildViewController:navigation];
         [self.view addSubview:navigation.view];

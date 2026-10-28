@@ -1,3 +1,4 @@
+#import <objc/runtime.h>
 #import "FMSettingsViewController.h"
 #import <math.h>
 
@@ -680,12 +681,27 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
 @property(nonatomic, copy) NSArray<NSString *> *mountedPaths;
 @property(nonatomic, strong) UITextField *pathField;
 @property(nonatomic) BOOL updating;
+@property(nonatomic, strong) NSIndexPath *swipeOpenRow;
+@end
+
+
+// --- custom swipe-to-reveal delete (independent frosted-glass pill) ---
+static char kSwipeHelperKey;
+
+@interface FMMountPathSwipeHelper : NSObject
+@property(nonatomic, strong) UIView *card;
+@property(nonatomic, strong) UIView *deletePill;
+@property(nonatomic, weak) FMMountPathListViewController *vc;
+@property(nonatomic, assign) NSInteger row;
+@end
+
+@implementation FMMountPathSwipeHelper
 @end
 
 @implementation FMMountPathListViewController
 
 - (instancetype)initWithWorkspace:(id<FMProfileWorkspace>)workspace {
-    self = [super initWithStyle:UITableViewStylePlain];
+    self = [super initWithStyle:UITableViewStyleInsetGrouped];
     if (self != nil) {
         _workspace = workspace;
         _paths = @[];
@@ -783,11 +799,20 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     UIButton *add = [UIButton buttonWithType:UIButtonTypeSystem];
     add.translatesAutoresizingMaskIntoConstraints = NO;
     UIButtonConfiguration *configuration =
-        [UIButtonConfiguration filledButtonConfiguration];
+        [UIButtonConfiguration plainButtonConfiguration];
     configuration.title = FMLocalized(@"添加挂载路径");
-    configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+    configuration.background.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
     configuration.baseForegroundColor = UIColor.labelColor;
+    add.layer.cornerRadius = 25;
+    add.layer.cornerCurve = kCACornerCurveContinuous;
+    add.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    add.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.55].CGColor;
     add.configuration = configuration;
     add.accessibilityIdentifier = @"settings_mount_path_add";
     [add addTarget:self action:@selector(addPathTapped:)
@@ -796,11 +821,20 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     UIButton *reset = [UIButton buttonWithType:UIButtonTypeSystem];
     reset.translatesAutoresizingMaskIntoConstraints = NO;
     UIButtonConfiguration *resetConfiguration =
-        [UIButtonConfiguration filledButtonConfiguration];
+        [UIButtonConfiguration plainButtonConfiguration];
     resetConfiguration.title = FMLocalized(@"全部移除");
-    resetConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    resetConfiguration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    resetConfiguration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+    resetConfiguration.background.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.10]
+                : [UIColor colorWithWhite:1.0 alpha:0.55];
+        }];
     resetConfiguration.baseForegroundColor = FMDangerColor();
+    reset.layer.cornerRadius = 25;
+    reset.layer.cornerCurve = kCACornerCurveContinuous;
+    reset.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    reset.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.50].CGColor;
     reset.configuration = resetConfiguration;
     reset.accessibilityIdentifier = @"settings_mount_path_reset";
     [reset addTarget:self action:@selector(resetTapped:)
@@ -1120,8 +1154,8 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
 
     [cell.contentView addSubview:card];
     [NSLayoutConstraint activateConstraints:@[
-        [card.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
-        [card.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-20],
+        [card.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor],
+        [card.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor],
         [card.topAnchor constraintEqualToAnchor:cell.contentView.topAnchor constant:4],
         [card.bottomAnchor constraintEqualToAnchor:cell.contentView.bottomAnchor constant:-4],
 
@@ -1145,12 +1179,15 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     cell.backgroundView = nil;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     cell.accessibilityIdentifier = [@"settings_mount_path_" stringByAppendingString:path];
+    NSInteger row = [self.paths indexOfObject:path];
+    if (row != NSNotFound) [self attachSwipeToCell:cell card:card row:row];
     return cell;
 }
 
+
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     (void)tableView;
-    return self.paths.count > 0 && indexPath.row < (NSInteger)self.paths.count;
+    return NO;
 }
 
 - (void)tableView:(UITableView *)tableView
@@ -1174,6 +1211,148 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
             [tableView reloadData];
         });
     });
+}
+
+- (void)attachSwipeToCell:(UITableViewCell *)cell card:(UIView *)card row:(NSInteger)row {
+    FMMountPathSwipeHelper *helper = objc_getAssociatedObject(cell, &kSwipeHelperKey);
+    if (helper == nil) {
+        helper = [[FMMountPathSwipeHelper alloc] init];
+        objc_setAssociatedObject(cell, &kSwipeHelperKey, helper, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        UIView *pill = [[UIView alloc] initWithFrame:CGRectZero];
+        pill.translatesAutoresizingMaskIntoConstraints = NO;
+        pill.backgroundColor = [UIColor colorWithDynamicProvider:
+            ^UIColor *(UITraitCollection *traits) {
+                return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                    ? [UIColor colorWithWhite:0.20 alpha:0.92]
+                    : [UIColor colorWithWhite:1.0 alpha:0.92];
+            }];
+        pill.layer.cornerRadius = 22;
+        pill.layer.cornerCurve = kCACornerCurveContinuous;
+        pill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+        pill.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+        [cell.contentView addSubview:pill];
+
+        UIVisualEffectView *pillBlur = [[UIVisualEffectView alloc]
+            initWithEffect:[UIBlurEffect
+                effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
+        pillBlur.translatesAutoresizingMaskIntoConstraints = NO;
+        pillBlur.layer.cornerRadius = 22;
+        pillBlur.layer.cornerCurve = kCACornerCurveContinuous;
+        pillBlur.clipsToBounds = YES;
+        pillBlur.userInteractionEnabled = NO;
+        [pill addSubview:pillBlur];
+
+        UIImageView *trash = [[UIImageView alloc]
+            initWithImage:[UIImage systemImageNamed:@"trash.fill"]];
+        trash.translatesAutoresizingMaskIntoConstraints = NO;
+        trash.tintColor = [UIColor systemRedColor];
+        trash.contentMode = UIViewContentModeScaleAspectFit;
+        [pill addSubview:trash];
+
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeWidth
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeWidth multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeHeight
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeHeight multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeCenterX
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeCenterX multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeCenterY
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
+
+        helper.deletePill = pill;
+        helper.card = card;
+        [cell.contentView addConstraints:@[
+            [pill.trailingAnchor constraintEqualToAnchor:card.trailingAnchor],
+            [pill.centerYAnchor constraintEqualToAnchor:card.centerYAnchor],
+            [pill.widthAnchor constraintEqualToConstant:64],
+            [pill.heightAnchor constraintEqualToConstant:64],
+            [trash.centerXAnchor constraintEqualToAnchor:pill.centerXAnchor],
+            [trash.centerYAnchor constraintEqualToAnchor:pill.centerYAnchor],
+            [trash.widthAnchor constraintEqualToConstant:22],
+            [trash.heightAnchor constraintEqualToConstant:22],
+        ]];
+        pill.hidden = YES;
+
+        UITapGestureRecognizer *tap =
+            [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                    action:@selector(deletePillTapped:)];
+        [pill addGestureRecognizer:tap];
+
+        UIPanGestureRecognizer *pan =
+            [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                    action:@selector(handleCardPan:)];
+        [card addGestureRecognizer:pan];
+    }
+    helper.row = row;
+    helper.vc = self;
+    helper.deletePill.hidden = YES;
+    card.transform = CGAffineTransformIdentity;
+}
+
+- (void)deletePillTapped:(UITapGestureRecognizer *)gesture {
+    UIView *pill = gesture.view;
+    FMMountPathSwipeHelper *hit = nil;
+    UITableViewCell *cell = (UITableViewCell *)pill.superview.superview;
+    if ([cell isKindOfClass:UITableViewCell.class]) {
+        FMMountPathSwipeHelper *h = objc_getAssociatedObject(cell, &kSwipeHelperKey);
+        if (h != nil) hit = h;
+    }
+    if (hit == nil || hit.vc == nil) return;
+    FMMountPathListViewController *vc = hit.vc;
+    if (hit.row >= (NSInteger)vc.paths.count) return;
+    NSString *path = vc.paths[hit.row];
+    id<FMProfileWorkspace> workspace = vc.workspace;
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSError *error = nil;
+        NSDictionary<NSString *, id> *report =
+            [workspace removeCustomMountPath:path error:&error];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (report == nil) {
+                [vc showError:error.localizedDescription ?:
+                    FMLocalized(@"无法移除这个挂载路径。")];
+                return;
+            }
+            vc.paths = report[@"paths"] ?: @[];
+            vc.mountedPaths = report[@"mounted"] ?: @[];
+            vc.swipeOpenRow = nil;
+            [vc.tableView reloadData];
+        });
+    });
+}
+
+- (void)handleCardPan:(UIPanGestureRecognizer *)pan {
+    UIView *card = pan.view;
+    UITableViewCell *cell = (UITableViewCell *)card.superview.superview;
+    FMMountPathSwipeHelper *helper = cell == nil ? nil :
+        objc_getAssociatedObject(cell, &kSwipeHelperKey);
+    if (helper == nil) return;
+    CGPoint t = [pan translationInView:card];
+    CGFloat x = card.transform.tx + t.x;
+    [pan setTranslation:CGPointZero inView:card];
+    if (x > 0) x = 0;
+    if (x < -100) x = -100;
+    card.transform = CGAffineTransformMakeTranslation(x, 0);
+    helper.deletePill.hidden = x > -6;
+    if (pan.state == UIGestureRecognizerStateEnded ||
+        pan.state == UIGestureRecognizerStateCancelled) {
+        CGFloat target = x < -50 ? -84.0 : 0.0;
+        [UIView animateWithDuration:0.28
+                              delay:0
+             usingSpringWithDamping:0.85
+              initialSpringVelocity:0.3
+                            options:UIViewAnimationOptionBeginFromCurrentState
+                         animations:^{ card.transform = CGAffineTransformMakeTranslation(target, 0); }
+                         completion:nil];
+        helper.deletePill.hidden = target == 0;
+    }
 }
 
 @end
@@ -1360,7 +1539,7 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
                              UIColor.tertiaryLabelColor);
     label.translatesAutoresizingMaskIntoConstraints = NO;
     NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
-    if (version.length == 0) version = @"0.3.8";
+    if (version.length == 0) version = @"0.3.9";
     label.text = [NSString stringWithFormat:FMLocalized(@"MarkFont · 版本 %@\n由 Hmmzzz 设计与开发\nNing二改自用版"),
                                             version];
     label.textAlignment = NSTextAlignmentCenter;
@@ -1381,7 +1560,7 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     (void)tableView;
-    if (section == FMSettingsSectionAbout) return 3;
+    if (section == FMSettingsSectionAbout) return 4;
     if (section == FMSettingsSectionGeneral) return 3;
     return 1;
 }
@@ -1491,7 +1670,7 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
                      destructive:NO];
         cell.accessibilityHint = FMLocalized(@"查看免责声明");
         cell.accessibilityIdentifier = @"settings_disclaimer";
-    } else {
+    } else if (indexPath.row == 3) {
         [cell configureWithTitle:FMLocalized(@"致谢")
                         subtitle:FMLocalized(@"感谢开源项目与社区贡献者")
                           symbol:@"heart.fill"
@@ -1499,6 +1678,14 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
                       disclosure:YES
                      destructive:NO];
         cell.accessibilityIdentifier = @"settings_acknowledgements";
+    } else {
+        [cell configureWithTitle:FMLocalized(@"二改作者")
+                        subtitle:@"Ning"
+                          symbol:@"person.crop.circle.badge.checkmark"
+                           color:FMAccentColor()
+                      disclosure:YES
+                     destructive:NO];
+        cell.accessibilityIdentifier = @"settings_coauthor";
     }
     return cell;
 }
@@ -1531,6 +1718,10 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
                 [[FMSettingsDisclaimerViewController alloc] init];
             [self.navigationController pushViewController:disclaimer animated:YES];
         } else if (indexPath.row == 2) {
+            [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
+            NSURL *url = [NSURL URLWithString:@"https://github.com/SorenNing"];
+            [UIApplication.sharedApplication openURL:url options:@{} completionHandler:nil];
+        } else if (indexPath.row == 3) {
             [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
             FMSettingsCreditsViewController *credits = [[FMSettingsCreditsViewController alloc] init];
             [self.navigationController pushViewController:credits animated:YES];

@@ -1,5 +1,10 @@
 #import "FMFontLibraryViewController.h"
 
+static NSString *FMCompressedName(NSString *name) {
+    if (name.length <= 14) return name;
+    return [[name substringToIndex:13] stringByAppendingString:@"…"];
+}
+
 // UI only; filesystem behavior is supplied by FMProfileWorkspace.
 
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
@@ -381,57 +386,90 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
     dockBlur.clipsToBounds = YES;
     dockBlur.userInteractionEnabled = NO;
     [self.actionDock addSubview:dockBlur];
+
+    UIView *dockFill = [[UIView alloc] initWithFrame:CGRectZero];
+    dockFill.translatesAutoresizingMaskIntoConstraints = NO;
+    dockFill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
+    dockFill.layer.cornerRadius = 26;
+    dockFill.layer.cornerCurve = kCACornerCurveContinuous;
+    dockFill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    dockFill.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.55].CGColor;
+    dockFill.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockFill];
+
+
     [NSLayoutConstraint activateConstraints:@[
         [dockBlur.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [dockBlur.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
         [dockBlur.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [dockBlur.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+        [dockFill.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockFill.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockFill.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockFill.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
     ]];
 
     self.applyButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.applyButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.applyButton setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     self.applyButton.accessibilityIdentifier = @"scheme_apply";
-    UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
     configuration.imagePadding = 8;
-    configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
+    configuration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
+    configuration.background.backgroundColor = UIColor.clearColor;
     NSString *profileID = FMLibraryNormalizedProfileID(self.profile[@"id"]);
     NSString *name = FMFriendlyProfileName(profileID, self.profile[@"name"]);
     if (self.loadError.length > 0) {
         configuration.title = FMLocalized(@"方案暂不可用");
         configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else if ([self.status isEqual:FMLocalized(@"使用中")]) {
-        configuration.title = [NSString stringWithFormat:FMLocalized(@"正在使用「%@」"), name];
+        configuration.title = [NSString stringWithFormat:FMLocalized(@"正在使用「%@」"), FMCompressedName(name)];
         configuration.image = [UIImage systemImageNamed:@"checkmark.circle.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else if ([self.status isEqual:FMLocalized(@"等待 Respring")]) {
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+            configuration.baseBackgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
             configuration.baseForegroundColor = UIColor.labelColor;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
             configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
-            configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+            configuration.baseBackgroundColor = UIColor.clearColor;
             configuration.baseForegroundColor = UIColor.secondaryLabelColor;
             self.applyButton.enabled = NO;
         }
     } else if (!self.workspace.allowsChanges) {
         configuration.title = FMLocalized(@"当前版本仅可查看");
         configuration.image = [UIImage systemImageNamed:@"eye.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.applyButton.enabled = NO;
     } else {
-        configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
+        configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), FMCompressedName(name)];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+        configuration.baseBackgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
         configuration.baseForegroundColor = UIColor.labelColor;
     }
     self.applyButton.configuration = configuration;
@@ -453,6 +491,7 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
                                                      constant:-6],
         [self.applyButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [self.applyButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [self.applyButton.widthAnchor constraintEqualToAnchor:self.actionDock.widthAnchor],
         [self.applyButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [self.applyButton.heightAnchor constraintEqualToConstant:52],
         [self.applyButton.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
@@ -910,20 +949,41 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     dockBlur.clipsToBounds = YES;
     dockBlur.userInteractionEnabled = NO;
     [self.actionDock addSubview:dockBlur];
+
+    UIView *dockFill = [[UIView alloc] initWithFrame:CGRectZero];
+    dockFill.translatesAutoresizingMaskIntoConstraints = NO;
+    dockFill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
+    dockFill.layer.cornerRadius = 26;
+    dockFill.layer.cornerCurve = kCACornerCurveContinuous;
+    dockFill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    dockFill.layer.borderColor = [UIColor.whiteColor colorWithAlphaComponent:0.55].CGColor;
+    dockFill.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockFill];
+
     [NSLayoutConstraint activateConstraints:@[
         [dockBlur.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [dockBlur.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
         [dockBlur.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [dockBlur.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+        [dockFill.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockFill.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockFill.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockFill.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
     ]];
 
     self.saveButton = [UIButton buttonWithType:UIButtonTypeSystem];
     self.saveButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.saveButton setContentHuggingPriority:UILayoutPriorityDefaultLow forAxis:UILayoutConstraintAxisHorizontal];
     self.saveButton.accessibilityIdentifier = @"package_save_profile";
-    UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 7;
-    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.background.backgroundColor = UIColor.clearColor;
     configuration.baseForegroundColor = UIColor.labelColor;
     NSUInteger conflicts = [self.preview[@"conflictTargetCount"] unsignedIntegerValue];
     NSUInteger matched = [self.preview[@"matchedTargetCount"] unsignedIntegerValue];
@@ -933,13 +993,13 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     } else if (conflicts > 0) {
         configuration.title = FMLocalized(@"请先处理同名冲突");
         configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.saveButton.enabled = NO;
     } else {
         configuration.title = matched == 0 ? FMLocalized(@"没有可保存的字体") : FMLocalized(@"当前仅可预览");
         configuration.image = [UIImage systemImageNamed:@"eye.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         self.saveButton.enabled = NO;
     }
@@ -963,6 +1023,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
                                                      constant:-6],
         [self.saveButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
         [self.saveButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [self.saveButton.widthAnchor constraintEqualToAnchor:self.actionDock.widthAnchor],
         [self.saveButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
         [self.saveButton.heightAnchor constraintEqualToConstant:52],
         [self.saveButton.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
@@ -1364,18 +1425,23 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
     button.translatesAutoresizingMaskIntoConstraints = NO;
     button.accessibilityIdentifier = @"profile_import";
-    UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
+    UIButtonConfiguration *configuration = [UIButtonConfiguration plainButtonConfiguration];
     configuration.title = FMLocalized(@"选择字体包");
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.image = [UIImage systemImageNamed:@"doc.badge.plus"];
     configuration.imagePadding = 7;
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.background.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.14]
+                : [UIColor colorWithWhite:1.0 alpha:0.62];
+        }];
     configuration.baseForegroundColor = UIColor.labelColor;
     if (!canPreviewPackages) {
         configuration.title = FMLocalized(@"字体包导入尚未开放");
         configuration.image = [UIImage systemImageNamed:@"lock.fill"];
-        configuration.baseBackgroundColor = UIColor.tertiarySystemFillColor;
+        configuration.baseBackgroundColor = UIColor.clearColor;
         configuration.baseForegroundColor = UIColor.secondaryLabelColor;
         button.enabled = NO;
     }
@@ -1391,16 +1457,25 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
         mixButton.translatesAutoresizingMaskIntoConstraints = NO;
         mixButton.accessibilityIdentifier = @"profile_mix";
         UIButtonConfiguration *mixConfiguration =
-            [UIButtonConfiguration filledButtonConfiguration];
+            [UIButtonConfiguration plainButtonConfiguration];
+        mixConfiguration.background.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.10]
+                : [UIColor colorWithWhite:1.0 alpha:0.45];
+        }];
         mixConfiguration.title = FMLocalized(@"创建混搭方案");
         mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-        mixConfiguration.baseBackgroundColor = [FMAccentColor()
-            colorWithAlphaComponent:0.14];
-        mixConfiguration.baseForegroundColor = FMAccentColor();
+        mixConfiguration.baseForegroundColor = UIColor.labelColor;
         mixConfiguration.image = [UIImage systemImageNamed:@"wand.and.stars"];
         mixConfiguration.imagePadding = 7;
         mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-        mixConfiguration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.45];
+        mixConfiguration.baseBackgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.10]
+                : [UIColor colorWithWhite:1.0 alpha:0.45];
+        }];
         mixConfiguration.baseForegroundColor = UIColor.labelColor;
         mixButton.configuration = mixConfiguration;
         [mixButton addTarget:self action:@selector(openMixComposer:)
