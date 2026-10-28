@@ -231,6 +231,8 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
     NSString *name = FMFriendlyProfileName(profileID, self.profile[@"name"]);
     self.title = name;
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    self.view.backgroundColor = UIColor.clearColor;
+    FMPageFrostView(self.view);
     self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 64;
@@ -493,6 +495,7 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
          cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"FileCell"
                                                             forIndexPath:indexPath];
+    cell.backgroundColor = UIColor.clearColor;
     UIListContentConfiguration *content = [UIListContentConfiguration subtitleCellConfiguration];
     if (self.loadError.length > 0) {
         content.text = FMLocalized(@"无法读取方案文件");
@@ -659,6 +662,8 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     [super viewDidLoad];
     self.title = FMLocalized(@"匹配结果");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
+    self.view.backgroundColor = UIColor.clearColor;
+    FMPageFrostView(self.view);
     self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 66;
@@ -891,7 +896,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 7;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.84];
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.72];
     configuration.baseForegroundColor = UIColor.whiteColor;
     NSUInteger conflicts = [self.preview[@"conflictTargetCount"] unsignedIntegerValue];
     NSUInteger matched = [self.preview[@"matchedTargetCount"] unsignedIntegerValue];

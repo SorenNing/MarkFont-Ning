@@ -113,9 +113,7 @@ static inline void FMConfigureNavigationController(
 
     UINavigationBarAppearance *appearance = [[UINavigationBarAppearance alloc] init];
     [appearance configureWithTransparentBackground];
-    appearance.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.34];
-    appearance.backgroundEffect = [UIBlurEffect
-        effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight];
+    appearance.backgroundColor = UIColor.clearColor;
     appearance.shadowColor = UIColor.clearColor;
     appearance.largeTitleTextAttributes = @{
         NSForegroundColorAttributeName : UIColor.labelColor,
@@ -131,6 +129,26 @@ static inline void FMConfigureNavigationController(
     navigationBar.scrollEdgeAppearance = appearance;
     navigationBar.compactAppearance = appearance;
     navigationBar.compactScrollEdgeAppearance = appearance;
+}
+
+
+// Frosted base for pushed pages: keeps the shared gradient visible while
+// making the page opaque enough that push/pop animations never bleed content.
+static inline UIView *FMPageFrostView(UIView *parentView) {
+    if (parentView == nil) return nil;
+    UIVisualEffectView *frost = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect
+            effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight]];
+    frost.translatesAutoresizingMaskIntoConstraints = NO;
+    frost.userInteractionEnabled = NO;
+    [parentView insertSubview:frost atIndex:0];
+    [NSLayoutConstraint activateConstraints:@[
+        [frost.leadingAnchor constraintEqualToAnchor:parentView.leadingAnchor],
+        [frost.trailingAnchor constraintEqualToAnchor:parentView.trailingAnchor],
+        [frost.topAnchor constraintEqualToAnchor:parentView.topAnchor],
+        [frost.bottomAnchor constraintEqualToAnchor:parentView.bottomAnchor],
+    ]];
+    return frost;
 }
 
 static inline UILabel *FMLabel(UIFontTextStyle style, UIFontWeight weight, UIColor *color) {
