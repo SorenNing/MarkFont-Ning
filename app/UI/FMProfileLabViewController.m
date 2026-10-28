@@ -292,7 +292,12 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self == nil) return nil;
-    self.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.55];
+    self.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.12]
+                : [UIColor colorWithWhite:1.0 alpha:0.55];
+        }];
     self.layer.cornerRadius = 23;
     self.layer.cornerCurve = kCACornerCurveContinuous;
     self.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
@@ -643,7 +648,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     settingsConfiguration.image = [UIImage systemImageNamed:@"gearshape.fill"];
     settingsConfiguration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
     settingsConfiguration.baseForegroundColor = FMAccentColor();
-    settingsConfiguration.baseBackgroundColor = FMAccentColor();
+    settingsConfiguration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.12];
     settingsButton.configuration = settingsConfiguration;
     [settingsButton addTarget:self action:@selector(openSettings:)
              forControlEvents:UIControlEventTouchUpInside];
@@ -661,7 +666,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     libraryConfiguration.image = [UIImage systemImageNamed:@"books.vertical.fill"];
     libraryConfiguration.cornerStyle = UIButtonConfigurationCornerStyleCapsule;
     libraryConfiguration.baseForegroundColor = FMAccentColor();
-    libraryConfiguration.baseBackgroundColor = FMAccentColor();
+    libraryConfiguration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.12];
     libraryButton.configuration = libraryConfiguration;
     [libraryButton addTarget:self action:@selector(openLibrary:)
             forControlEvents:UIControlEventTouchUpInside];
@@ -1104,7 +1109,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.55];
             configuration.baseForegroundColor = UIColor.whiteColor;
             self.applyButton.enabled = YES;
         } else {
@@ -1130,7 +1135,7 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
+        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.55];
         configuration.baseForegroundColor = UIColor.whiteColor;
         self.applyButton.enabled = YES;
     }

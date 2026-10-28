@@ -2,6 +2,7 @@
 
 @interface FMLiquidGradientView : UIView
 @property(nonatomic, copy) NSArray<CAGradientLayer *> *blobs;
+@property(nonatomic, copy) NSArray<UIColor *> *resolvedColors;
 @end
 
 @implementation FMLiquidGradientView
@@ -9,16 +10,39 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self == nil) return nil;
-    self.backgroundColor = [UIColor colorWithRed:0.929
-                                           green:0.914
-                                            blue:0.894
-                                           alpha:1.0];
-    NSArray<UIColor *> *colors = @[
-        [UIColor colorWithRed:0.988 green:0.851 blue:0.749 alpha:1.0],
-        [UIColor colorWithRed:0.988 green:0.816 blue:0.867 alpha:1.0],
-        [UIColor colorWithRed:0.788 green:0.925 blue:0.878 alpha:1.0],
-        [UIColor colorWithRed:0.855 green:0.820 blue:0.976 alpha:1.0],
-    ];
+    // Same hue family, one dark variant: the background darkens as a whole in
+    // dark mode while the gradient pattern stays identical.
+    self.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithRed:0.106 green:0.098 blue:0.118 alpha:1.0]
+                : [UIColor colorWithRed:0.929 green:0.914 blue:0.894 alpha:1.0];
+        }];
+    UIColor *blobWarm = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithRed:0.42 green:0.26 blue:0.18 alpha:1.0]
+                : [UIColor colorWithRed:0.988 green:0.851 blue:0.749 alpha:1.0];
+        }];
+    UIColor *blobPink = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithRed:0.40 green:0.20 blue:0.28 alpha:1.0]
+                : [UIColor colorWithRed:0.988 green:0.816 blue:0.867 alpha:1.0];
+        }];
+    UIColor *blobMint = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithRed:0.10 green:0.30 blue:0.26 alpha:1.0]
+                : [UIColor colorWithRed:0.788 green:0.925 blue:0.878 alpha:1.0];
+        }];
+    UIColor *blobViolet = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithRed:0.24 green:0.20 blue:0.44 alpha:1.0]
+                : [UIColor colorWithRed:0.855 green:0.820 blue:0.976 alpha:1.0];
+        }];
+    NSArray<UIColor *> *colors = @[ blobWarm, blobPink, blobMint, blobViolet ];
     NSMutableArray<CAGradientLayer *> *blobs = [NSMutableArray array];
     for (UIColor *color in colors) {
         CAGradientLayer *layer = [CAGradientLayer layer];
@@ -35,7 +59,30 @@
         [blobs addObject:layer];
     }
     _blobs = blobs;
+    _resolvedColors = colors;
+    [self updateBlobColors];
     return self;
+}
+
+- (void)updateBlobColors {
+    [_blobs enumerateObjectsUsingBlock:^(CAGradientLayer *layer,
+                                         NSUInteger index,
+                                         BOOL *stop) {
+        (void)stop;
+        UIColor *color = self->_resolvedColors[index];
+        layer.colors = @[
+            (id)color.CGColor,
+            (id)[color colorWithAlphaComponent:0.0].CGColor,
+        ];
+    }];
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+    if (previousTraitCollection.userInterfaceStyle !=
+        self.traitCollection.userInterfaceStyle) {
+        [self updateBlobColors];
+    }
 }
 
 - (void)layoutSubviews {
@@ -106,11 +153,16 @@ UIView *FMGlassBackgroundView(void) {
 
 UIView *FMGlassCardView(void) {
     UIView *view = [[UIView alloc] initWithFrame:CGRectZero];
-    view.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.32];
+    view.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:1.0 alpha:0.10]
+                : [UIColor colorWithWhite:1.0 alpha:0.32];
+        }];
     view.layer.cornerRadius = 26;
     view.layer.cornerCurve = kCACornerCurveContinuous;
     view.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
-    view.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:1.0].CGColor;
+    view.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.92].CGColor;
     view.layer.shadowColor = [UIColor colorWithRed:0.36
                                               green:0.26
                                                blue:0.22
@@ -122,7 +174,7 @@ UIView *FMGlassCardView(void) {
 
     UIVisualEffectView *blur = [[UIVisualEffectView alloc]
         initWithEffect:[UIBlurEffect
-            effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight]];
+            effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
     blur.translatesAutoresizingMaskIntoConstraints = NO;
     blur.userInteractionEnabled = NO;
     [view addSubview:blur];

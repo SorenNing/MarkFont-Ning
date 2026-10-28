@@ -86,7 +86,12 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self == nil) return nil;
-    self.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.55];
+    self.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:0.08 alpha:0.60]
+                : [UIColor colorWithWhite:1.0 alpha:0.55];
+        }];
     self.layer.cornerRadius = 35;
     self.layer.cornerCurve = kCACornerCurveContinuous;
     self.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
@@ -102,7 +107,7 @@
 
     _blur = [[UIVisualEffectView alloc]
         initWithEffect:[UIBlurEffect
-            effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterialLight]];
+            effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial]];
     _blur.translatesAutoresizingMaskIntoConstraints = NO;
     _blur.layer.cornerRadius = 35;
     _blur.layer.cornerCurve = kCACornerCurveContinuous;
@@ -117,7 +122,12 @@
     ]];
 
     _pill = [[UIView alloc] initWithFrame:CGRectZero];
-    _pill.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.88];
+    _pill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:0.25 alpha:0.92]
+                : [UIColor colorWithWhite:1.0 alpha:0.88];
+        }];
     _pill.layer.cornerRadius = 27;
     _pill.layer.cornerCurve = kCACornerCurveContinuous;
     _pill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;

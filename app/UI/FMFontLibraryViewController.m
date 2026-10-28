@@ -896,7 +896,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 7;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.72];
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
     configuration.baseForegroundColor = UIColor.whiteColor;
     NSUInteger conflicts = [self.preview[@"conflictTargetCount"] unsignedIntegerValue];
     NSUInteger matched = [self.preview[@"matchedTargetCount"] unsignedIntegerValue];
@@ -1348,7 +1348,7 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     configuration.image = [UIImage systemImageNamed:@"doc.badge.plus"];
     configuration.imagePadding = 7;
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = FMAccentColor();
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
     configuration.baseForegroundColor = UIColor.whiteColor;
     if (!canPreviewPackages) {
         configuration.title = FMLocalized(@"字体包导入尚未开放");

@@ -762,11 +762,11 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
                                                  weight:UIFontWeightRegular];
     pathField.textColor = UIColor.labelColor;
     pathField.tintColor = FMAccentColor();
-    pathField.backgroundColor = FMCardColor();
-    pathField.layer.cornerRadius = 14;
+    pathField.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.34];
+    pathField.layer.cornerRadius = 16;
     pathField.layer.cornerCurve = kCACornerCurveContinuous;
     pathField.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
-    pathField.layer.borderColor = FMHairlineColor().CGColor;
+    pathField.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.92].CGColor;
     pathField.autocapitalizationType = UITextAutocapitalizationTypeNone;
     pathField.autocorrectionType = UITextAutocorrectionTypeNo;
     pathField.spellCheckingType = UITextSpellCheckingTypeNo;
@@ -786,7 +786,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
         [UIButtonConfiguration filledButtonConfiguration];
     configuration.title = FMLocalized(@"添加挂载路径");
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.84];
+    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
     configuration.baseForegroundColor = UIColor.whiteColor;
     add.configuration = configuration;
     add.accessibilityIdentifier = @"settings_mount_path_add";
@@ -1080,6 +1080,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     cell.textLabel.font = [UIFont monospacedSystemFontOfSize:14.0
                                                       weight:UIFontWeightRegular];
     cell.textLabel.numberOfLines = 2;
+    cell.layoutMargins = UIEdgeInsetsMake(6, 16, 6, 16);
     cell.textLabel.textColor = UIColor.labelColor;
     cell.detailTextLabel.text = mounted
         ? FMLocalized(@"已挂载") : FMLocalized(@"未挂载");
@@ -1088,7 +1089,9 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     cell.backgroundColor = UIColor.clearColor;
     if (cell.backgroundView == nil) {
         UIView *card = FMGlassCardView();
-        card.layer.cornerRadius = 20;
+        card.layer.cornerRadius = 22;
+        card.layer.shadowOpacity = 0.06;
+        card.layer.shadowRadius = 10;
         cell.backgroundView = card;
     }
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
@@ -1353,16 +1356,36 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
 
 - (UITableViewCell *)tableView:(UITableView *)tableView
          cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.section == FMSettingsSectionAutomation) {
+    if (indexPath.section == FMSettingsSectionAutomation ||
+        (indexPath.section == FMSettingsSectionGeneral &&
+         indexPath.row == 2)) {
         FMSettingsToggleCell *cell =
             [tableView dequeueReusableCellWithIdentifier:@"SettingsToggleCell"
                                             forIndexPath:indexPath];
-        [cell configureAutomaticRespringEnabled:self.automaticRespringEnabled
-                                         loaded:self.automaticRespringPolicyLoaded
-                                        updating:self.automaticRespringUpdateInFlight
-                                           target:self
-                                           action:@selector(automaticRespringSwitchChanged:)];
-        cell.accessibilityIdentifier = @"settings_auto_respring";
+        if (indexPath.section == FMSettingsSectionAutomation) {
+            [cell configureAutomaticRespringEnabled:self.automaticRespringEnabled
+                                             loaded:self.automaticRespringPolicyLoaded
+                                           updating:self.automaticRespringUpdateInFlight
+                                              target:self
+                                              action:@selector(automaticRespringSwitchChanged:)];
+            cell.accessibilityIdentifier = @"settings_auto_respring";
+        } else {
+            [cell configureWithTitle:FMLocalized(@"跟随系统深浅模式")
+                            subtitle:FMLocalized(@"关闭后固定使用浅色外观")
+                              symbol:@"circle.lefthalf.filled"
+                               color:FMAccentColor()
+                          disclosure:NO
+                         destructive:NO];
+            cell.chevron.hidden = YES;
+            [cell.toggle removeTarget:nil action:NULL
+                     forControlEvents:UIControlEventValueChanged];
+            [cell.toggle setOn:FMFollowSystemAppearanceEnabled() animated:NO];
+            [cell.toggle addTarget:self
+                            action:@selector(appearanceSwitchChanged:)
+                  forControlEvents:UIControlEventValueChanged];
+            cell.toggle.accessibilityLabel = FMLocalized(@"跟随系统深浅模式");
+            cell.accessibilityIdentifier = @"settings_follow_system_appearance";
+        }
         return cell;
     }
 
@@ -1394,24 +1417,6 @@ UIViewController *FMCreateMountPathsViewController(id<FMProfileWorkspace> worksp
         cell.chevron.hidden = YES;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         cell.accessibilityIdentifier = @"settings_default_font_path";
-    } else if (indexPath.section == FMSettingsSectionGeneral &&
-               indexPath.row == 2) {
-        [cell configureWithTitle:FMLocalized(@"跟随系统深浅模式")
-                        subtitle:FMLocalized(@"关闭后固定使用浅色外观")
-                          symbol:@"circle.lefthalf.filled"
-                           color:FMAccentColor()
-                      disclosure:NO
-                     destructive:NO];
-        cell.chevron.hidden = YES;
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-        cell.accessibilityIdentifier = @"settings_follow_system_appearance";
-        UISwitch *appearanceSwitch = [[UISwitch alloc] initWithFrame:CGRectZero];
-        appearanceSwitch.onTintColor = FMAccentColor();
-        appearanceSwitch.on = FMFollowSystemAppearanceEnabled();
-        [appearanceSwitch addTarget:self
-                             action:@selector(appearanceSwitchChanged:)
-                   forControlEvents:UIControlEventValueChanged];
-        cell.accessoryView = appearanceSwitch;
     } else if (indexPath.section == FMSettingsSectionDevice) {
         [cell configureWithTitle:FMLocalized(@"运行环境")
                         subtitle:FMLocalized(@"查看组件、字体连接与恢复准备")
