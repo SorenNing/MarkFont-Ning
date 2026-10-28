@@ -1115,6 +1115,12 @@ static char kSwipeHelperKey;
     NSString *path = self.paths[indexPath.row];
     BOOL mounted = [self.mountedPaths containsObject:path];
 
+    // Reused cells accumulate stale swipe cards; clear every custom view so
+    // exactly one card (and its delete pill) exists per cell.
+    for (UIView *stale in [cell.contentView.subviews copy]) {
+        [stale removeFromSuperview];
+    }
+
     // Settings-row style: icon + two lines inside one glass card, same row
     // height and insets as the Settings page.
     UIView *card = FMGlassCardView();
