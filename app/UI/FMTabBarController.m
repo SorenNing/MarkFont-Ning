@@ -100,9 +100,9 @@
                                               green:0.20
                                                blue:0.26
                                               alpha:1.0].CGColor;
-    self.layer.shadowOpacity = 0.16;
-    self.layer.shadowRadius = 24;
-    self.layer.shadowOffset = CGSizeMake(0, 14);
+    self.layer.shadowOpacity = 0.10;
+    self.layer.shadowRadius = 16;
+    self.layer.shadowOffset = CGSizeMake(0, 10);
     self.clipsToBounds = NO;
 
     _blur = [[UIVisualEffectView alloc]

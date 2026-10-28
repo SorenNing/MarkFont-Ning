@@ -1080,7 +1080,8 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     cell.textLabel.font = [UIFont monospacedSystemFontOfSize:14.0
                                                       weight:UIFontWeightRegular];
     cell.textLabel.numberOfLines = 2;
-    cell.layoutMargins = UIEdgeInsetsMake(6, 16, 6, 16);
+    cell.layoutMargins = UIEdgeInsetsMake(6, 20, 6, 20);
+    cell.directionalLayoutMargins = NSDirectionalEdgeInsetsMake(6, 20, 6, 20);
     cell.textLabel.textColor = UIColor.labelColor;
     cell.detailTextLabel.text = mounted
         ? FMLocalized(@"已挂载") : FMLocalized(@"未挂载");
@@ -1089,9 +1090,9 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     cell.backgroundColor = UIColor.clearColor;
     if (cell.backgroundView == nil) {
         UIView *card = FMGlassCardView();
-        card.layer.cornerRadius = 22;
-        card.layer.shadowOpacity = 0.06;
-        card.layer.shadowRadius = 10;
+        card.layer.cornerRadius = 18;
+        card.layer.shadowOpacity = 0.05;
+        card.layer.shadowRadius = 8;
         cell.backgroundView = card;
     }
     cell.selectionStyle = UITableViewCellSelectionStyleNone;

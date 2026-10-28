@@ -890,18 +890,15 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         [hint.topAnchor constraintEqualToAnchor:self.profileScrollView.bottomAnchor constant:2],
         [hint.bottomAnchor constraintEqualToAnchor:self.contentView.bottomAnchor constant:-116],
 
-        [self.actionDock.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
-        [self.actionDock.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
-        [self.actionDock.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor],
-        [self.applyButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor
-                                                        constant:20],
-        [self.applyButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor
-                                                         constant:-20],
-        [self.applyButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor
-                                                    constant:14],
-        [self.applyButton.heightAnchor constraintEqualToConstant:56],
-        [self.applyButton.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
-                                                       constant:-12],
+        [self.actionDock.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
+        [self.actionDock.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [self.actionDock.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
+                                                     constant:-6],
+        [self.applyButton.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [self.applyButton.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [self.applyButton.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [self.applyButton.heightAnchor constraintEqualToConstant:52],
+        [self.applyButton.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
     ]];
 }
 

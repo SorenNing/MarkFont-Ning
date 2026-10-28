@@ -163,13 +163,6 @@ UIView *FMGlassCardView(void) {
     view.layer.cornerCurve = kCACornerCurveContinuous;
     view.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
     view.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.92].CGColor;
-    view.layer.shadowColor = [UIColor colorWithRed:0.36
-                                              green:0.26
-                                               blue:0.22
-                                              alpha:1.0].CGColor;
-    view.layer.shadowOpacity = 0.10;
-    view.layer.shadowRadius = 18;
-    view.layer.shadowOffset = CGSizeMake(0, 8);
     view.clipsToBounds = YES;
 
     UIVisualEffectView *blur = [[UIVisualEffectView alloc]
