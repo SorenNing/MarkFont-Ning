@@ -416,10 +416,26 @@ static BOOL FMPackageClaimEmptyInitialization(NSString *systemBuild,
         if (!FMPackageMarkerPresent(
                 FMOwnershipLogicalPath, @"packageOwned", systemBuild,
                 &packageOwned, &claimError) || !packageOwned) {
-            return FMPackageLifecycleFail(
-                error, 3,
-                @"An unowned engine root blocks first-install initialization.",
-                claimError);
+            // Tolerate an unclaimed root when it clearly holds no managed
+            // state (e.g. an install whose maintainer scripts never ran).
+            BOOL hasState = [NSFileManager.defaultManager
+                fileExistsAtPath:jbroot(FMStateLogicalPath)];
+            BOOL hasMirror = [NSFileManager.defaultManager
+                fileExistsAtPath:jbroot(@"/var/lib/fontmanager/.mirror-owned")];
+            if (hasState || hasMirror) {
+                return FMPackageLifecycleFail(
+                    error, 3,
+                    @"An unowned engine root blocks first-install initialization.",
+                    claimError);
+            }
+            if (!FMPackageEnsureMarker(
+                    FMOwnershipLogicalPath, @"packageOwned", systemBuild,
+                    &claimError)) {
+                return FMPackageLifecycleFail(
+                    error, 3,
+                    @"The unclaimed engine root could not be adopted.",
+                    claimError);
+            }
         }
         return YES;
     }
@@ -1278,15 +1294,25 @@ NSDictionary<NSString *, id> *FMPrepareDevicePackageRemoval(
         return nil;
     }
     BOOL engineOwned = NO;
-    if (engineRootPresent &&
+    BOOL ownershipMissing = engineRootPresent &&
         (!FMPackageMarkerPresent(
              FMOwnershipLogicalPath, @"packageOwned", systemBuild,
-             &engineOwned, &operationError) || !engineOwned)) {
-        FMPackageLifecycleFail(
-            error, 3,
-            @"Removal stopped because the engine root is not owned by this MarkFont installation.",
-            operationError);
-        return nil;
+             &engineOwned, &operationError) || !engineOwned);
+    if (ownershipMissing) {
+        // An unowned root that holds no managed state may pass removal; the
+        // plain files are then cleaned by dpkg. This unblocks installs whose
+        // maintainer scripts never executed.
+        BOOL hasState = [NSFileManager.defaultManager
+            fileExistsAtPath:jbroot(FMStateLogicalPath)];
+        BOOL hasMirrorOwnership = [NSFileManager.defaultManager
+            fileExistsAtPath:jbroot(FMMirrorOwnershipLogicalPath)];
+        if (hasState || hasMirrorOwnership) {
+            FMPackageLifecycleFail(
+                error, 3,
+                @"Removal stopped because the engine root is not owned by this MarkFont installation.",
+                operationError);
+            return nil;
+        }
     }
     NSDictionary *legacyProviderAdjustment = nil;
     if (engineOwned) {
