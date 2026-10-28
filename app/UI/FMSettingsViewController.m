@@ -238,7 +238,7 @@ static UIView *FMSettingsSectionHeaderView(NSString *title) {
     self.title = FMLocalized(@"语言");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.view.backgroundColor = UIColor.clearColor;
-    FMPageFrostView(self.view);
+    FMPageFrostView(self);
     self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
@@ -480,7 +480,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     self.title = FMLocalized(@"免责声明");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.view.backgroundColor = UIColor.clearColor;
-    FMPageFrostView(self.view);
+    FMPageFrostView(self);
 
     UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectZero];
     scrollView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -579,7 +579,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     self.title = FMLocalized(@"致谢");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.view.backgroundColor = UIColor.clearColor;
-    FMPageFrostView(self.view);
+    FMPageFrostView(self);
     self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.rowHeight = UITableViewAutomaticDimension;

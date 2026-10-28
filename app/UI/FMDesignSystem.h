@@ -132,26 +132,6 @@ static inline void FMConfigureNavigationController(
 }
 
 
-// Frosted base for pushed pages: keeps the shared gradient visible while
-// making the page opaque enough that push/pop animations never bleed content.
-static inline UIView *FMPageFrostView(UIView *parentView) {
-    if (parentView == nil) return nil;
-    // Opaque shared gradient: every page paints the same full-screen pattern,
-    // so push/pop animations never bleed the page underneath. The pattern is
-    // anchored to the full screen, making root and pushed pages identical.
-    UIView *backdrop = FMGlassBackgroundView();
-    backdrop.translatesAutoresizingMaskIntoConstraints = NO;
-    backdrop.userInteractionEnabled = NO;
-    [parentView insertSubview:backdrop atIndex:0];
-    [NSLayoutConstraint activateConstraints:@[
-        [backdrop.leadingAnchor constraintEqualToAnchor:parentView.leadingAnchor],
-        [backdrop.trailingAnchor constraintEqualToAnchor:parentView.trailingAnchor],
-        [backdrop.topAnchor constraintEqualToAnchor:parentView.topAnchor],
-        [backdrop.bottomAnchor constraintEqualToAnchor:parentView.bottomAnchor],
-    ]];
-    return backdrop;
-}
-
 static inline UILabel *FMLabel(UIFontTextStyle style, UIFontWeight weight, UIColor *color) {
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
     UIFontDescriptor *descriptor = [UIFontDescriptor preferredFontDescriptorWithTextStyle:style];
@@ -163,7 +143,7 @@ static inline UILabel *FMLabel(UIFontTextStyle style, UIFontWeight weight, UICol
 }
 
 static inline UIFont *FMFontWithDesign(CGFloat size, UIFontWeight weight,
-                                      UIFontDescriptorSystemDesign design) {
+                                       UIFontDescriptorSystemDesign design) {
     UIFont *base = [UIFont systemFontOfSize:size weight:weight];
     UIFontDescriptor *designed = [base.fontDescriptor fontDescriptorWithDesign:design];
     return designed == nil ? base : [UIFont fontWithDescriptor:designed size:size];
@@ -209,27 +189,18 @@ static inline NSInteger FMPreviewFontNameScore(NSString *_Nullable fontName,
     }
     NSString *name = fontName.lowercaseString;
     NSInteger score = 1000;
-
-    // Width is more important than weight for a neutral specimen. In
-    // particular, iOS 17 SFUI exposes UltraCompressed descriptors first.
     if ([name containsString:@"compressed"] || [name containsString:@"condensed"] ||
         [name containsString:@"expanded"]) score += 800;
     if ([name containsString:@"italic"] || [name containsString:@"oblique"]) score += 500;
-
     if ([name containsString:@"regular"]) score -= 400;
     else if ([name containsString:@"-medium"]) score += 50;
     else if ([name containsString:@"-light"]) score += 180;
     else if ([name containsString:@"-thin"] || [name containsString:@"ultralight"]) score += 260;
     else if ([name containsString:@"semibold"] || [name containsString:@"-bold"] ||
              [name containsString:@"-heavy"] || [name containsString:@"-black"]) score += 220;
-
     if ([name hasPrefix:@"."]) score += 5;
     if ([name hasSuffix:@"g1"] || [name hasSuffix:@"g2"] ||
         [name hasSuffix:@"g3"] || [name hasSuffix:@"g4"]) score += 20;
-
-    // PingFang.ttc and PingFangUI.ttc can begin with HK and TC faces.
-    // Simplified Chinese specimens should use the SC Regular face when it is
-    // available.
     if ([path.lowercaseString.lastPathComponent containsString:@"pingfang"] ||
         [name containsString:@"pingfang"]) {
         if ([name containsString:@"pingfangsc-regular"]) score -= 120;
@@ -270,6 +241,28 @@ static inline UIFont *_Nullable FMPreviewFontAtPath(NSString *_Nullable path,
         : CTFontCreateWithFontDescriptor(descriptor, pointSize, NULL);
     CFRelease(descriptors);
     return coreTextFont == NULL ? nil : CFBridgingRelease(coreTextFont);
+}
+
+// Frosted base for pushed pages: keeps the shared gradient visible while
+// making the page opaque enough that push/pop animations never bleed content.
+static inline void FMPageFrostView(UIViewController *controller) {
+    if (controller == nil) return;
+    UIView *backdrop = FMGlassBackgroundView();
+    backdrop.frame = controller.view.bounds;
+    backdrop.autoresizingMask = UIViewAutoresizingFlexibleWidth |
+        UIViewAutoresizingFlexibleHeight;
+    backdrop.userInteractionEnabled = NO;
+    if ([controller isKindOfClass:UITableViewController.class]) {
+        UITableViewController *tableController =
+            (UITableViewController *)controller;
+        // UITableViewController.view is the table itself; a plain subview
+        // would scroll with content. backgroundView stays fixed, full-size
+        // and behind every cell.
+        tableController.tableView.backgroundView = backdrop;
+        tableController.tableView.backgroundColor = UIColor.clearColor;
+    } else {
+        [controller.view insertSubview:backdrop atIndex:0];
+    }
 }
 
 static inline NSArray<UIColor *> *FMProfileGradientColors(NSString *_Nullable profileID,

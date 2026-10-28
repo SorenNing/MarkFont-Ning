@@ -340,7 +340,7 @@ static NSDictionary<NSString *, id> *FMEnvironmentItem(
     self.title = FMLocalized(@"运行环境");
     self.navigationItem.largeTitleDisplayMode = UINavigationItemLargeTitleDisplayModeNever;
     self.view.backgroundColor = UIColor.clearColor;
-    FMPageFrostView(self.view);
+    FMPageFrostView(self);
     self.tableView.backgroundColor = UIColor.clearColor;
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
