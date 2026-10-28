@@ -828,6 +828,23 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     self.actionDock.translatesAutoresizingMaskIntoConstraints = NO;
     [self.view addSubview:self.actionDock];
 
+    // Frosted glass backing behind the apply/using pill (solid, not tint-only).
+    UIVisualEffectView *dockBlur = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect
+            effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
+    dockBlur.translatesAutoresizingMaskIntoConstraints = NO;
+    dockBlur.layer.cornerRadius = 26;
+    dockBlur.layer.cornerCurve = kCACornerCurveContinuous;
+    dockBlur.clipsToBounds = YES;
+    dockBlur.userInteractionEnabled = NO;
+    [self.actionDock addSubview:dockBlur];
+    [NSLayoutConstraint activateConstraints:@[
+        [dockBlur.leadingAnchor constraintEqualToAnchor:self.actionDock.leadingAnchor],
+        [dockBlur.trailingAnchor constraintEqualToAnchor:self.actionDock.trailingAnchor],
+        [dockBlur.topAnchor constraintEqualToAnchor:self.actionDock.topAnchor],
+        [dockBlur.bottomAnchor constraintEqualToAnchor:self.actionDock.bottomAnchor],
+    ]];
+
     self.applyButton = [FMPressableButton buttonWithType:UIButtonTypeSystem];
     self.applyButton.translatesAutoresizingMaskIntoConstraints = NO;
     self.applyButton.accessibilityIdentifier = @"profile_apply";
@@ -1106,8 +1123,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.55];
-            configuration.baseForegroundColor = UIColor.whiteColor;
+            configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+            configuration.baseForegroundColor = UIColor.labelColor;
             self.applyButton.enabled = YES;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
@@ -1132,8 +1149,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.55];
-        configuration.baseForegroundColor = UIColor.whiteColor;
+        configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+        configuration.baseForegroundColor = UIColor.labelColor;
         self.applyButton.enabled = YES;
     }
     self.applyButton.configuration = configuration;
@@ -1212,12 +1229,37 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
 }
 
 - (void)showSuccessToastWithName:(NSString *)name {
-    UIView *toast = FMCardView();
+    // Solid frosted glass pill (like the tab bar): blur + tint fill, not a
+    // see-through tint.
+    UIView *toast = [[UIView alloc] initWithFrame:CGRectZero];
     toast.translatesAutoresizingMaskIntoConstraints = NO;
-    toast.backgroundColor = [UIColor colorWithWhite:1.0 alpha:0.78];
-    toast.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+    toast.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:0.20 alpha:0.92]
+                : [UIColor colorWithWhite:1.0 alpha:0.92];
+        }];
+    toast.layer.cornerRadius = 24;
+    toast.layer.cornerCurve = kCACornerCurveContinuous;
     toast.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+    toast.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
     toast.accessibilityIdentifier = @"profile_success";
+
+    UIVisualEffectView *toastBlur = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect
+            effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
+    toastBlur.translatesAutoresizingMaskIntoConstraints = NO;
+    toastBlur.layer.cornerRadius = 24;
+    toastBlur.layer.cornerCurve = kCACornerCurveContinuous;
+    toastBlur.clipsToBounds = YES;
+    toastBlur.userInteractionEnabled = NO;
+    [toast addSubview:toastBlur];
+    [NSLayoutConstraint activateConstraints:@[
+        [toastBlur.leadingAnchor constraintEqualToAnchor:toast.leadingAnchor],
+        [toastBlur.trailingAnchor constraintEqualToAnchor:toast.trailingAnchor],
+        [toastBlur.topAnchor constraintEqualToAnchor:toast.topAnchor],
+        [toastBlur.bottomAnchor constraintEqualToAnchor:toast.bottomAnchor],
+    ]];
 
     UIImageView *icon = [[UIImageView alloc]
         initWithImage:[UIImage systemImageNamed:@"checkmark.circle.fill"]];
@@ -1231,13 +1273,15 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     label.text = [NSString stringWithFormat:FMLocalized(@"已切换到 %@"), name];
     label.numberOfLines = 1;
     [toast addSubview:label];
+    [toast bringSubviewToFront:icon];
+    [toast bringSubviewToFront:label];
     [self.view addSubview:toast];
 
     [NSLayoutConstraint activateConstraints:@[
         [toast.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
         [toast.topAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.topAnchor constant:8],
         [toast.heightAnchor constraintEqualToConstant:48],
-        [toast.widthAnchor constraintLessThanOrEqualToAnchor:self.view.widthAnchor constant:-40],
+        [toast.widthAnchor constraintLessThanOrEqualToAnchor:self.view.widthAnchor constant:-32],
         [icon.leadingAnchor constraintEqualToAnchor:toast.leadingAnchor constant:14],
         [icon.centerYAnchor constraintEqualToAnchor:toast.centerYAnchor],
         [icon.widthAnchor constraintEqualToConstant:21],

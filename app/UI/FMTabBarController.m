@@ -94,8 +94,8 @@
         }];
     self.layer.cornerRadius = 35;
     self.layer.cornerCurve = kCACornerCurveContinuous;
-    self.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
-    self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+    self.layer.borderWidth = 0.8 / UIScreen.mainScreen.scale;
+    self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.75].CGColor;
     self.layer.shadowColor = [UIColor colorWithRed:0.32
                                               green:0.20
                                                blue:0.26

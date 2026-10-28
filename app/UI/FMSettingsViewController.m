@@ -753,7 +753,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
 
 - (UIView *)makeFooter {
     UIView *footer = [[UIView alloc]
-        initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 240)];
+        initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 252)];
 
     UITextField *pathField = [[UITextField alloc] initWithFrame:CGRectZero];
     pathField.translatesAutoresizingMaskIntoConstraints = NO;
@@ -786,8 +786,8 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
         [UIButtonConfiguration filledButtonConfiguration];
     configuration.title = FMLocalized(@"添加挂载路径");
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
-    configuration.baseForegroundColor = UIColor.whiteColor;
+    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.baseForegroundColor = UIColor.labelColor;
     add.configuration = configuration;
     add.accessibilityIdentifier = @"settings_mount_path_add";
     [add addTarget:self action:@selector(addPathTapped:)
@@ -796,8 +796,10 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     UIButton *reset = [UIButton buttonWithType:UIButtonTypeSystem];
     reset.translatesAutoresizingMaskIntoConstraints = NO;
     UIButtonConfiguration *resetConfiguration =
-        [UIButtonConfiguration plainButtonConfiguration];
+        [UIButtonConfiguration filledButtonConfiguration];
     resetConfiguration.title = FMLocalized(@"全部移除");
+    resetConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
+    resetConfiguration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
     resetConfiguration.baseForegroundColor = FMDangerColor();
     reset.configuration = resetConfiguration;
     reset.accessibilityIdentifier = @"settings_mount_path_reset";
@@ -1076,25 +1078,69 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
     }
     NSString *path = self.paths[indexPath.row];
     BOOL mounted = [self.mountedPaths containsObject:path];
-    cell.textLabel.text = path;
-    cell.textLabel.font = [UIFont monospacedSystemFontOfSize:14.0
-                                                      weight:UIFontWeightRegular];
-    cell.textLabel.numberOfLines = 2;
-    cell.layoutMargins = UIEdgeInsetsMake(6, 20, 6, 20);
-    cell.directionalLayoutMargins = NSDirectionalEdgeInsetsMake(6, 20, 6, 20);
-    cell.textLabel.textColor = UIColor.labelColor;
-    cell.detailTextLabel.text = mounted
-        ? FMLocalized(@"已挂载") : FMLocalized(@"未挂载");
-    cell.detailTextLabel.textColor = mounted
-        ? FMSuccessColor() : UIColor.secondaryLabelColor;
+
+    // Settings-row style: icon + two lines inside one glass card, same row
+    // height and insets as the Settings page.
+    UIView *card = FMGlassCardView();
+    card.translatesAutoresizingMaskIntoConstraints = NO;
+    card.layer.cornerRadius = 22;
+
+    UIView *iconBackground = [[UIView alloc] initWithFrame:CGRectZero];
+    iconBackground.translatesAutoresizingMaskIntoConstraints = NO;
+    iconBackground.backgroundColor = FMTintedBackground(FMAccentColor());
+    iconBackground.layer.cornerRadius = 14;
+    iconBackground.layer.cornerCurve = kCACornerCurveContinuous;
+    [card addSubview:iconBackground];
+
+    UIImageView *iconView = [[UIImageView alloc]
+        initWithImage:[UIImage systemImageNamed:mounted
+            ? @"link.circle.fill" : @"link.circle"]];
+    iconView.translatesAutoresizingMaskIntoConstraints = NO;
+    iconView.contentMode = UIViewContentModeScaleAspectFit;
+    iconView.tintColor = FMAccentColor();
+    [iconBackground addSubview:iconView];
+
+    UILabel *titleLabel = FMLabel(UIFontTextStyleBody, UIFontWeightSemibold,
+                                  UIColor.labelColor);
+    titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    titleLabel.text = path;
+    titleLabel.font = [UIFont monospacedSystemFontOfSize:13.5
+                                                  weight:UIFontWeightRegular];
+    titleLabel.numberOfLines = 2;
+    [card addSubview:titleLabel];
+
+    UILabel *subtitleLabel = FMLabel(UIFontTextStyleFootnote, UIFontWeightRegular,
+                                     mounted ? FMSuccessColor()
+                                             : UIColor.secondaryLabelColor);
+    subtitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    subtitleLabel.text = mounted ? FMLocalized(@"已挂载") : FMLocalized(@"未挂载");
+    [card addSubview:subtitleLabel];
+
+    [cell.contentView addSubview:card];
+    [NSLayoutConstraint activateConstraints:@[
+        [card.leadingAnchor constraintEqualToAnchor:cell.contentView.leadingAnchor constant:20],
+        [card.trailingAnchor constraintEqualToAnchor:cell.contentView.trailingAnchor constant:-20],
+        [card.topAnchor constraintEqualToAnchor:cell.contentView.topAnchor constant:4],
+        [card.bottomAnchor constraintEqualToAnchor:cell.contentView.bottomAnchor constant:-4],
+
+        [iconBackground.leadingAnchor constraintEqualToAnchor:card.leadingAnchor constant:14],
+        [iconBackground.centerYAnchor constraintEqualToAnchor:card.centerYAnchor],
+        [iconBackground.widthAnchor constraintEqualToConstant:36],
+        [iconBackground.heightAnchor constraintEqualToConstant:36],
+        [iconView.centerXAnchor constraintEqualToAnchor:iconBackground.centerXAnchor],
+        [iconView.centerYAnchor constraintEqualToAnchor:iconBackground.centerYAnchor],
+        [iconView.widthAnchor constraintEqualToConstant:19],
+        [iconView.heightAnchor constraintEqualToConstant:19],
+
+        [titleLabel.leadingAnchor constraintEqualToAnchor:iconBackground.trailingAnchor constant:13],
+        [titleLabel.topAnchor constraintEqualToAnchor:card.topAnchor constant:13],
+        [titleLabel.trailingAnchor constraintEqualToAnchor:card.trailingAnchor constant:-16],
+        [subtitleLabel.leadingAnchor constraintEqualToAnchor:titleLabel.leadingAnchor],
+        [subtitleLabel.topAnchor constraintEqualToAnchor:titleLabel.bottomAnchor constant:2],
+        [subtitleLabel.bottomAnchor constraintEqualToAnchor:card.bottomAnchor constant:-12],
+    ]];
     cell.backgroundColor = UIColor.clearColor;
-    if (cell.backgroundView == nil) {
-        UIView *card = FMGlassCardView();
-        card.layer.cornerRadius = 18;
-        card.layer.shadowOpacity = 0.05;
-        card.layer.shadowRadius = 8;
-        cell.backgroundView = card;
-    }
+    cell.backgroundView = nil;
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     cell.accessibilityIdentifier = [@"settings_mount_path_" stringByAppendingString:path];
     return cell;

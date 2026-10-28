@@ -396,8 +396,8 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
         if (self.workspace.allowsRestart) {
             configuration.title = @"Respring";
             configuration.image = [UIImage systemImageNamed:@"arrow.clockwise"];
-            configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
-            configuration.baseForegroundColor = UIColor.whiteColor;
+            configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+            configuration.baseForegroundColor = UIColor.labelColor;
         } else {
             configuration.title = FMLocalized(@"Respring 暂不可用");
             configuration.image = [UIImage systemImageNamed:@"exclamationmark.triangle"];
@@ -415,8 +415,8 @@ static NSString *FMFriendlyMirrorRole(NSString *relativePath) {
         configuration.title = [NSString stringWithFormat:FMLocalized(@"应用「%@」"), name];
         configuration.image = [UIImage systemImageNamed:@"arrow.right"];
         configuration.imagePlacement = NSDirectionalRectEdgeTrailing;
-        configuration.baseBackgroundColor = [FMGlassAccentColor() colorWithAlphaComponent:0.78];
-        configuration.baseForegroundColor = UIColor.whiteColor;
+        configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+        configuration.baseForegroundColor = UIColor.labelColor;
     }
     self.applyButton.configuration = configuration;
     [self.applyButton addTarget:self action:@selector(applyScheme:)
@@ -896,8 +896,8 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     UIButtonConfiguration *configuration = [UIButtonConfiguration filledButtonConfiguration];
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
     configuration.imagePadding = 7;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
-    configuration.baseForegroundColor = UIColor.whiteColor;
+    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.baseForegroundColor = UIColor.labelColor;
     NSUInteger conflicts = [self.preview[@"conflictTargetCount"] unsignedIntegerValue];
     NSUInteger matched = [self.preview[@"matchedTargetCount"] unsignedIntegerValue];
     if ([self canSaveProfile]) {
@@ -1348,8 +1348,8 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     configuration.image = [UIImage systemImageNamed:@"doc.badge.plus"];
     configuration.imagePadding = 7;
     configuration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-    configuration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.55];
-    configuration.baseForegroundColor = UIColor.whiteColor;
+    configuration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.62];
+    configuration.baseForegroundColor = UIColor.labelColor;
     if (!canPreviewPackages) {
         configuration.title = FMLocalized(@"字体包导入尚未开放");
         configuration.image = [UIImage systemImageNamed:@"lock.fill"];
@@ -1378,8 +1378,8 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
         mixConfiguration.image = [UIImage systemImageNamed:@"wand.and.stars"];
         mixConfiguration.imagePadding = 7;
         mixConfiguration.cornerStyle = UIButtonConfigurationCornerStyleLarge;
-        mixConfiguration.baseBackgroundColor = [FMAccentColor() colorWithAlphaComponent:0.18];
-        mixConfiguration.baseForegroundColor = FMAccentColor();
+        mixConfiguration.baseBackgroundColor = [UIColor colorWithWhite:1.0 alpha:0.45];
+        mixConfiguration.baseForegroundColor = UIColor.labelColor;
         mixButton.configuration = mixConfiguration;
         [mixButton addTarget:self action:@selector(openMixComposer:)
             forControlEvents:UIControlEventTouchUpInside];
