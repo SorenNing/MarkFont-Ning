@@ -1224,6 +1224,13 @@ static char kSwipeHelperKey;
     if (helper == nil) {
         helper = [[FMMountPathSwipeHelper alloc] init];
         objc_setAssociatedObject(cell, &kSwipeHelperKey, helper, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    } else {
+        // Cell content was rebuilt (reuse cleanup removed the old card/pill):
+        // drop stale references so a fresh pill and pan are created below.
+        helper.card = nil;
+        helper.deletePill = nil;
+    }
+    if (YES) {
 
         UIView *pill = [[UIView alloc] initWithFrame:CGRectZero];
         pill.translatesAutoresizingMaskIntoConstraints = NO;
