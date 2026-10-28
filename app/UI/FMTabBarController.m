@@ -92,7 +92,7 @@
                 ? [UIColor colorWithWhite:0.08 alpha:0.60]
                 : [UIColor colorWithWhite:1.0 alpha:0.55];
         }];
-    self.layer.cornerRadius = 35;
+    self.layer.cornerRadius = 36;
     self.layer.cornerCurve = kCACornerCurveContinuous;
     self.layer.borderWidth = 0.8 / UIScreen.mainScreen.scale;
     self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.75].CGColor;
@@ -109,7 +109,7 @@
         initWithEffect:[UIBlurEffect
             effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial]];
     _blur.translatesAutoresizingMaskIntoConstraints = NO;
-    _blur.layer.cornerRadius = 35;
+    _blur.layer.cornerRadius = 36;
     _blur.layer.cornerCurve = kCACornerCurveContinuous;
     _blur.clipsToBounds = YES;
     _blur.userInteractionEnabled = NO;
@@ -128,7 +128,7 @@
                 ? [UIColor colorWithWhite:0.25 alpha:0.92]
                 : [UIColor colorWithWhite:1.0 alpha:0.88];
         }];
-    _pill.layer.cornerRadius = 27;
+    _pill.layer.cornerRadius = 29;
     _pill.layer.cornerCurve = kCACornerCurveContinuous;
     _pill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
     _pill.layer.borderColor = UIColor.whiteColor.CGColor;
@@ -170,9 +170,9 @@
                                          NSUInteger index,
                                          BOOL *stop) {
         (void)stop;
-        item.frame = CGRectMake(width * index, 4.0, width, self.bounds.size.height - 8.0);
+        item.frame = CGRectMake(width * index, 7.0, width, self.bounds.size.height - 14.0);
     }];
-    _pill.frame = CGRectInset(_items[(NSUInteger)_selectedIndex].frame, 4, 4);
+    _pill.frame = CGRectInset(_items[(NSUInteger)_selectedIndex].frame, 7, 7);
 }
 
 - (void)itemTapped:(FMTabItemView *)sender {
@@ -196,7 +196,7 @@
         [item setSelected:(NSInteger)itemIndex == index];
     }];
     void (^updates)(void) = ^{
-        self->_pill.frame = CGRectInset(self->_items[(NSUInteger)index].frame, 4, 4);
+        self->_pill.frame = CGRectInset(self->_items[(NSUInteger)index].frame, 7, 7);
     };
     if (animated && !UIAccessibilityIsReduceMotionEnabled()) {
         [UIView animateWithDuration:0.32
@@ -298,7 +298,7 @@
         [self.tabBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
         [self.tabBar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
                                                  constant:-14],
-        [self.tabBar.heightAnchor constraintEqualToConstant:66],
+        [self.tabBar.heightAnchor constraintEqualToConstant:72],
     ]];
 
     [self installSwipeGestures];

@@ -753,7 +753,7 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
 
 - (UIView *)makeFooter {
     UIView *footer = [[UIView alloc]
-        initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 252)];
+        initWithFrame:CGRectMake(0, 0, self.view.bounds.size.width, 276)];
 
     UITextField *pathField = [[UITextField alloc] initWithFrame:CGRectZero];
     pathField.translatesAutoresizingMaskIntoConstraints = NO;
@@ -827,8 +827,10 @@ static UIView *FMSettingsDisclaimerReminderView(void) {
         [add.trailingAnchor constraintEqualToAnchor:pathField.trailingAnchor],
         [add.topAnchor constraintEqualToAnchor:pathField.bottomAnchor constant:10],
         [add.heightAnchor constraintEqualToConstant:50],
-        [reset.centerXAnchor constraintEqualToAnchor:add.centerXAnchor],
-        [reset.topAnchor constraintEqualToAnchor:add.bottomAnchor constant:6],
+        [reset.leadingAnchor constraintEqualToAnchor:add.leadingAnchor],
+        [reset.trailingAnchor constraintEqualToAnchor:add.trailingAnchor],
+        [reset.topAnchor constraintEqualToAnchor:add.bottomAnchor constant:10],
+        [reset.heightAnchor constraintEqualToConstant:50],
         [hint.leadingAnchor constraintEqualToAnchor:add.leadingAnchor],
         [hint.trailingAnchor constraintEqualToAnchor:add.trailingAnchor],
         [hint.topAnchor constraintEqualToAnchor:reset.bottomAnchor constant:8],
