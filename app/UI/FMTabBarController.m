@@ -46,7 +46,7 @@
     [NSLayoutConstraint activateConstraints:@[
         [glyphView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
         [glyphView.topAnchor constraintEqualToAnchor:self.topAnchor constant:9],
-        [glyphView.widthAnchor constraintEqualToConstant:22],
+        [glyphView.widthAnchor constraintGreaterThanOrEqualToConstant:26],
         [glyphView.heightAnchor constraintEqualToConstant:21],
         [_titleLabel.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:2],
         [_titleLabel.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-2],
