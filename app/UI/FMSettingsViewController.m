@@ -757,7 +757,7 @@ static char kSwipeHelperKey;
                              UIColor.secondaryLabelColor);
     label.translatesAutoresizingMaskIntoConstraints = NO;
     label.numberOfLines = 0;
-    label.text = FMLocalized(@"把这些系统目录映射到 jbroot 中对应的目录（可读写，写入只影响 jbroot 副本）。添加时会先复制当前系统目录到 jbroot（如果还没有）。不会改动 /System/Library/Fonts 的挂载。");
+    label.text = FMLocalized(@"把这些系统目录映射到 jbroot 中对应的目录（可读写，写入只影响 jbroot 副本）。添加时会先复制当前系统目录到 jbroot。不会改动 /System/Library/Fonts 的挂载。");
     [header addSubview:label];
     [NSLayoutConstraint activateConstraints:@[
         [label.leadingAnchor constraintEqualToAnchor:header.leadingAnchor constant:22],

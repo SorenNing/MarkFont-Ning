@@ -1,4 +1,5 @@
 #import "FMFontLibraryViewController.h"
+#import <objc/runtime.h>
 
 static NSString *FMCompressedName(NSString *name) {
     if (name.length <= 14) return name;
@@ -39,31 +40,13 @@ static BOOL FMLibraryShouldShowIOS18To26ChineseImportTip(void) {
         FMSystemFontLayoutFontServicesCorePrivate;
 }
 
-static UIImage *FMCircularDeleteActionImage(UITraitCollection *traits) {
-    CGSize size = CGSizeMake(44, 44);
-    UIGraphicsImageRenderer *renderer =
-        [[UIGraphicsImageRenderer alloc] initWithSize:size];
-    UIImage *image = [renderer imageWithActions:^(__unused UIGraphicsImageRendererContext *context) {
-        UIColor *danger = [FMDangerColor() resolvedColorWithTraitCollection:traits];
-        [danger setFill];
-        [[UIBezierPath bezierPathWithOvalInRect:CGRectInset((CGRect){ CGPointZero, size }, 2, 2)]
-            fill];
 
-        UIImageSymbolConfiguration *symbolConfiguration =
-            [UIImageSymbolConfiguration configurationWithPointSize:18
-                                                            weight:UIImageSymbolWeightSemibold];
-        UIImage *trash = [[UIImage systemImageNamed:@"trash.fill"
-                                  withConfiguration:symbolConfiguration]
-            imageWithTintColor:UIColor.whiteColor
-                 renderingMode:UIImageRenderingModeAlwaysOriginal];
-        CGPoint origin = CGPointMake((size.width - trash.size.width) / 2.0,
-                                     (size.height - trash.size.height) / 2.0);
-        [trash drawAtPoint:origin];
-    }];
-    image = [image imageWithRenderingMode:UIImageRenderingModeAlwaysOriginal];
-    image.accessibilityLabel = FMLocalized(@"删除");
-    return image;
-}
+@interface FMLibrarySwipeHelper : NSObject
+@property(nonatomic, strong) UIView *card;
+@property(nonatomic, strong) UIView *deletePill;
+@property(nonatomic, copy) NSString *profileID;
++ (void)clearOn:(UITableViewCell *)cell;
+@end
 
 @interface FMFontLibraryCell : UITableViewCell
 @property(nonatomic, strong) UIView *card;
@@ -1273,6 +1256,28 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
 @property(nonatomic, copy) FMFontLibraryApplyHandler applyHandler;
 @property(nonatomic, copy) dispatch_block_t dismissalHandler;
 @property(nonatomic) BOOL packagePreviewInProgress;
+
+- (void)attachGlassSwipeToCell:(FMFontLibraryCell *)cell
+                     profileID:(NSString *)profileID;
+- (void)libraryDeleteTapped:(UITapGestureRecognizer *)gesture;
+- (void)libraryCardPan:(UIPanGestureRecognizer *)pan;
+@end
+
+// --- glass swipe-to-delete (same interaction as the mount list) ---
+static char kLibrarySwipeKey;
+
+@implementation FMLibrarySwipeHelper
++ (void)clearOn:(UITableViewCell *)cell {
+    FMLibrarySwipeHelper *helper =
+        objc_getAssociatedObject(cell, &kLibrarySwipeKey);
+    if (helper == nil) return;
+    for (UIView *stale in [cell.contentView.subviews copy]) {
+        if (stale != helper.card) [stale removeFromSuperview];
+    }
+    [helper.card removeFromSuperview];
+    objc_setAssociatedObject(cell, &kLibrarySwipeKey, nil,
+                             OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 @end
 
 @implementation FMFontLibraryViewController
@@ -1640,6 +1645,14 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
     cell.accessibilityIdentifier = profileID == nil
                                        ? @"library_stock"
                                        : [@"library_" stringByAppendingString:profileID];
+    BOOL deletable = indexPath.section == 1 &&
+        [profileID hasPrefix:@"import-"] &&
+        (self.workspace.allowsChanges || [self canSaveFontPackages]);
+    if (deletable) {
+        [self attachGlassSwipeToCell:cell profileID:profileID];
+    } else {
+        [FMLibrarySwipeHelper clearOn:cell];
+    }
     return cell;
 }
 
@@ -1676,33 +1689,143 @@ typedef void (^FMFontPackageSavedHandler)(NSDictionary<NSString *, id> *profile)
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
     (void)tableView;
-    if (!self.workspace.allowsChanges && ![self canSaveFontPackages]) return NO;
-    if (indexPath.section != 1) return NO;
-    NSDictionary<NSString *, id> *profile = self.sections[1][(NSUInteger)indexPath.row];
-    return [FMLibraryNormalizedProfileID(profile[@"id"]) hasPrefix:@"import-"];
+    return NO;  // glass swipe handles deletion; system edit swipe disabled
 }
 
-- (UISwipeActionsConfiguration *)tableView:(UITableView *)tableView
-    trailingSwipeActionsConfigurationForRowAtIndexPath:(NSIndexPath *)indexPath {
-    (void)tableView;
-    if (indexPath.section != 1) return nil;
-    NSDictionary<NSString *, id> *profile = self.sections[1][(NSUInteger)indexPath.row];
-    __weak typeof(self) weakSelf = self;
-    UIContextualAction *deleteAction =
-        [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
-                                                title:nil
-                                              handler:^(__unused UIContextualAction *action,
-                                                        __unused UIView *source,
-                                                        void (^completion)(BOOL)) {
-        [weakSelf confirmDeleteProfile:profile completion:completion];
+
+- (void)attachGlassSwipeToCell:(FMFontLibraryCell *)cell
+                     profileID:(NSString *)profileID {
+    FMLibrarySwipeHelper *helper =
+        objc_getAssociatedObject(cell, &kLibrarySwipeKey);
+    if (helper == nil) {
+        helper = [[FMLibrarySwipeHelper alloc] init];
+        objc_setAssociatedObject(cell, &kLibrarySwipeKey, helper,
+                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        UIView *pill = [[UIView alloc] initWithFrame:CGRectZero];
+        pill.translatesAutoresizingMaskIntoConstraints = NO;
+        pill.backgroundColor = [UIColor colorWithDynamicProvider:
+            ^UIColor *(UITraitCollection *traits) {
+                return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                    ? [UIColor colorWithWhite:0.20 alpha:0.92]
+                    : [UIColor colorWithWhite:1.0 alpha:0.92];
+            }];
+        pill.layer.cornerRadius = 22;
+        pill.layer.cornerCurve = kCACornerCurveContinuous;
+        pill.layer.borderWidth = 1.0 / UIScreen.mainScreen.scale;
+        pill.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.95].CGColor;
+        [cell.contentView addSubview:pill];
+
+        UIVisualEffectView *pillBlur = [[UIVisualEffectView alloc]
+            initWithEffect:[UIBlurEffect
+                effectWithStyle:UIBlurEffectStyleSystemThinMaterial]];
+        pillBlur.translatesAutoresizingMaskIntoConstraints = NO;
+        pillBlur.layer.cornerRadius = 22;
+        pillBlur.layer.cornerCurve = kCACornerCurveContinuous;
+        pillBlur.clipsToBounds = YES;
+        pillBlur.userInteractionEnabled = NO;
+        [pill addSubview:pillBlur];
+
+        UIImageView *trash = [[UIImageView alloc]
+            initWithImage:[UIImage systemImageNamed:@"trash.fill"]];
+        trash.translatesAutoresizingMaskIntoConstraints = NO;
+        trash.tintColor = [UIColor systemRedColor];
+        trash.contentMode = UIViewContentModeScaleAspectFit;
+        [pill addSubview:trash];
+
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeWidth
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeWidth multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeHeight
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeHeight multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeCenterX
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeCenterX multiplier:1 constant:0]];
+        [pill addConstraint:[NSLayoutConstraint
+            constraintWithItem:pillBlur attribute:NSLayoutAttributeCenterY
+            relatedBy:NSLayoutRelationEqual toItem:pill
+            attribute:NSLayoutAttributeCenterY multiplier:1 constant:0]];
+
+        helper.deletePill = pill;
+        helper.card = cell.card;
+        helper.profileID = profileID;
+        [cell.contentView addConstraints:@[
+            [pill.trailingAnchor constraintEqualToAnchor:cell.card.trailingAnchor],
+            [pill.centerYAnchor constraintEqualToAnchor:cell.card.centerYAnchor],
+            [pill.widthAnchor constraintEqualToConstant:64],
+            [pill.heightAnchor constraintEqualToConstant:64],
+            [trash.centerXAnchor constraintEqualToAnchor:pill.centerXAnchor],
+            [trash.centerYAnchor constraintEqualToAnchor:pill.centerYAnchor],
+            [trash.widthAnchor constraintEqualToConstant:22],
+            [trash.heightAnchor constraintEqualToConstant:22],
+        ]];
+        pill.hidden = YES;
+
+        UITapGestureRecognizer *tap =
+            [[UITapGestureRecognizer alloc] initWithTarget:self
+                                                    action:@selector(libraryDeleteTapped:)];
+        [pill addGestureRecognizer:tap];
+
+        UIPanGestureRecognizer *pan =
+            [[UIPanGestureRecognizer alloc] initWithTarget:self
+                                                    action:@selector(libraryCardPan:)];
+        [cell.card addGestureRecognizer:pan];
+    } else {
+        helper.profileID = profileID;
+    }
+}
+
+- (void)libraryDeleteTapped:(UITapGestureRecognizer *)gesture {
+    UIView *pill = gesture.view;
+    UITableViewCell *cell = (UITableViewCell *)pill.superview.superview;
+    FMLibrarySwipeHelper *helper = cell == nil ? nil :
+        objc_getAssociatedObject(cell, &kLibrarySwipeKey);
+    if (helper == nil || helper.profileID.length == 0) return;
+    NSDictionary<NSString *, id> *profile = nil;
+    for (NSDictionary<NSString *, id> *candidate in self.sections[1]) {
+        if (FMLibraryProfileIDsEqual(
+                FMLibraryNormalizedProfileID(candidate[@"id"]),
+                helper.profileID)) {
+            profile = candidate;
+            break;
+        }
+    }
+    if (profile == nil) return;
+    [self confirmDeleteProfile:profile completion:^(BOOL done) {
+        (void)done;
     }];
-    deleteAction.backgroundColor =
-        [FMCanvasColor() resolvedColorWithTraitCollection:tableView.traitCollection];
-    deleteAction.image = FMCircularDeleteActionImage(tableView.traitCollection);
-    UISwipeActionsConfiguration *configuration =
-        [UISwipeActionsConfiguration configurationWithActions:@[ deleteAction ]];
-    configuration.performsFirstActionWithFullSwipe = NO;
-    return configuration;
+}
+
+- (void)libraryCardPan:(UIPanGestureRecognizer *)pan {
+    UIView *card = pan.view;
+    UITableViewCell *cell = (UITableViewCell *)card.superview.superview;
+    FMLibrarySwipeHelper *helper = cell == nil ? nil :
+        objc_getAssociatedObject(cell, &kLibrarySwipeKey);
+    if (helper == nil) return;
+    CGPoint t = [pan translationInView:card];
+    CGFloat x = card.transform.tx + t.x;
+    [pan setTranslation:CGPointZero inView:card];
+    if (x > 0) x = 0;
+    if (x < -100) x = -100;
+    card.transform = CGAffineTransformMakeTranslation(x, 0);
+    helper.deletePill.hidden = x > -6;
+    if (pan.state == UIGestureRecognizerStateEnded ||
+        pan.state == UIGestureRecognizerStateCancelled) {
+        CGFloat target = x < -50 ? -84.0 : 0.0;
+        [UIView animateWithDuration:0.28
+                              delay:0
+             usingSpringWithDamping:0.85
+              initialSpringVelocity:0.3
+                            options:UIViewAnimationOptionBeginFromCurrentState
+                         animations:^{ card.transform =
+                             CGAffineTransformMakeTranslation(target, 0); }
+                         completion:nil];
+        helper.deletePill.hidden = target == 0;
+    }
 }
 
 - (void)confirmDeleteProfile:(NSDictionary<NSString *, id> *)profile
