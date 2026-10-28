@@ -136,19 +136,20 @@ static inline void FMConfigureNavigationController(
 // making the page opaque enough that push/pop animations never bleed content.
 static inline UIView *FMPageFrostView(UIView *parentView) {
     if (parentView == nil) return nil;
-    UIVisualEffectView *frost = [[UIVisualEffectView alloc]
-        initWithEffect:[UIBlurEffect
-            effectWithStyle:UIBlurEffectStyleSystemThinMaterialLight]];
-    frost.translatesAutoresizingMaskIntoConstraints = NO;
-    frost.userInteractionEnabled = NO;
-    [parentView insertSubview:frost atIndex:0];
+    // Opaque shared gradient: every page paints the same full-screen pattern,
+    // so push/pop animations never bleed the page underneath. The pattern is
+    // anchored to the full screen, making root and pushed pages identical.
+    UIView *backdrop = FMGlassBackgroundView();
+    backdrop.translatesAutoresizingMaskIntoConstraints = NO;
+    backdrop.userInteractionEnabled = NO;
+    [parentView insertSubview:backdrop atIndex:0];
     [NSLayoutConstraint activateConstraints:@[
-        [frost.leadingAnchor constraintEqualToAnchor:parentView.leadingAnchor],
-        [frost.trailingAnchor constraintEqualToAnchor:parentView.trailingAnchor],
-        [frost.topAnchor constraintEqualToAnchor:parentView.topAnchor],
-        [frost.bottomAnchor constraintEqualToAnchor:parentView.bottomAnchor],
+        [backdrop.leadingAnchor constraintEqualToAnchor:parentView.leadingAnchor],
+        [backdrop.trailingAnchor constraintEqualToAnchor:parentView.trailingAnchor],
+        [backdrop.topAnchor constraintEqualToAnchor:parentView.topAnchor],
+        [backdrop.bottomAnchor constraintEqualToAnchor:parentView.bottomAnchor],
     ]];
-    return frost;
+    return backdrop;
 }
 
 static inline UILabel *FMLabel(UIFontTextStyle style, UIFontWeight weight, UIColor *color) {
