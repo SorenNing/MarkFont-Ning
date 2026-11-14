@@ -1,0 +1,30 @@
+name: MarkFont RootHide arm64e
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install ldid dpkg
+      - name: Set up Theos and SDK
+        run: |
+          git clone --depth 1 --recursive https://github.com/roothide/theos.git "$HOME/theos"
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$RUNNER_TEMP/sdks"
+          git -C "$RUNNER_TEMP/sdks" sparse-checkout set iPhoneOS16.5.sdk
+          cp -R "$RUNNER_TEMP/sdks/iPhoneOS16.5.sdk" "$HOME/theos/sdks/"
+      - name: Build RootHide package
+        run: |
+          chmod +x scripts/*
+          export THEOS="$HOME/theos"
+          make THEOS_PACKAGE_SCHEME=roothide TARGET=iphone:clang:16.5:16.0 FINALPACKAGE=1 package
+          test -n "$(find packages -name '*_iphoneos-arm64e.deb' -print -quit)"
+          shasum -a 256 packages/*_iphoneos-arm64e.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MarkFont-RootHide-arm64e
+          path: packages/*_iphoneos-arm64e.deb
+          if-no-files-found: error

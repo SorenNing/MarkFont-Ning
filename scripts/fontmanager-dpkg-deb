@@ -91,7 +91,7 @@ if /usr/bin/grep -R -q '@MARKFONT_PACKAGE_PREFIX@' "$staging_root"; then
 fi
 
 /bin/chmod 0755 "$mount_backend"
-mount_backend_mode=$(stat -c '%a' "$mount_backend")
+mount_backend_mode=$(python3 -c 'import os, stat, sys; print(format(stat.S_IMODE(os.stat(sys.argv[1]).st_mode), "o"))' "$mount_backend")
 if [[ "$mount_backend_mode" != "755" ]]; then
   printf 'Unable to stage markfont-bindfs with mode 0755; found %s.\n' \
     "$mount_backend_mode" >&2
@@ -99,7 +99,7 @@ if [[ "$mount_backend_mode" != "755" ]]; then
 fi
 
 /bin/chmod 4755 "$helper"
-helper_mode=$(stat -c '%a' "$helper")
+helper_mode=$(python3 -c 'import os, stat, sys; print(format(stat.S_IMODE(os.stat(sys.argv[1]).st_mode), "o"))' "$helper")
 if [[ "$helper_mode" != "4755" ]]; then
   printf 'Unable to stage fontmanagerd with mode 4755; found %s.\n' "$helper_mode" >&2
   exit 77
