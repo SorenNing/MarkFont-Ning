@@ -31,6 +31,20 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'Self.iOS26PillSize : Self.pillSize' not in tab
     assert 'first.midX - Self.lensOverrun' not in tab
     assert 'backgroundGlassView.markfontExcludeFromCapture(glassView)' in tab
+    # The active lens is an ancestor sibling, so a clip on the outer bar does
+    # not cover it. Require opt-in masks on all three actual glass surfaces.
+    assert tab.count('.markfontClipsOpticalBounds = true') == 3
+    for surface in ['backgroundGlassView', 'selectionView', 'glassView']:
+        assert surface + '.markfontClipsOpticalBounds = true' in tab
+    assert 'public override var bounds: CGRect' in view
+    assert 'if bounds != oldValue { markfontUpdateOpticalMask() }' in view
+    assert 'markfontUpdateOpticalMask()\n            renderer?.updateConfiguration(configuration)' in view
+    assert 'super.layoutSubviews()\n        markfontUpdateOpticalMask()' in view
+    assert 'if layer.mask !== markfontOpticalMask { layer.mask = markfontOpticalMask }' in view
+    assert 'markfontOpticalMask.path = markfontOpticalPath(in: maskFrame)' in view
+    assert 'shape.widthInset, dy: shape.heightInset' in view
+    assert 'scaleX: max(morph.scale.x, 0.0001)' in view
+    assert 'mask.path = glass.markfontOpticalPath(in: layer.frame)' in compensation
     assert 'metalContainer.isOpaque = false' in view
     assert 'metalContainer.autoresizingMask' not in view
     assert 'let drawFrame = bounds.insetBy(dx: -padding.x, dy: -padding.y)' in view
@@ -77,9 +91,30 @@ for outer_width in [240, 288, 343, 358, 398, 512, 740, 992]:
                 assert math.isclose(padded_width * transform, (width + 2 * padding_x) * transform)
                 assert math.isclose(padded_height * transform, (height + 2 * padding_y) * transform)
                 cases += 1
+# Independent optical-mask coordinate contract: padding changes the host,
+# not the capsule. Inset/morph changes must move the mask without a resize.
+mask_cases = 0
+for width, height in [(51, 64), (78, 64), (96, 70), (398, 72)]:
+    for px, py in [(0, 0), (18, 18), (10, 17)]:
+        for ix, iy in [(0, 0), (-0.8, -0.8), (2, 3)]:
+            for sx, sy in [(1, 1), (.9, 1.1), (1.0431, 1.0431)]:
+                # Path translation into padded mask coordinates and back.
+                x0 = width / 2 + (ix - width / 2) * sx
+                x1 = width / 2 + (width - ix - width / 2) * sx
+                y0 = height / 2 + (iy - height / 2) * sy
+                y1 = height / 2 + (height - iy - height / 2) * sy
+                assert math.isclose((x0 + px) - px, x0, abs_tol=1e-9)
+                assert math.isclose((y0 + py) - py, y0, abs_tol=1e-9)
+                assert math.isclose(x1 - x0, (width - 2 * ix) * sx)
+                assert math.isclose(y1 - y0, (height - 2 * iy) * sy)
+                assert math.isclose((x0 + x1) / 2, width / 2)
+                assert math.isclose((y0 + y1) / 2, height / 2)
+                mask_cases += 1
 controller = (root / 'app/UI/FMTabBarController.m').read_text()
 for text in ['constant:16', 'constant:-16', 'constant:-14', 'constraintEqualToConstant:72']:
     assert text in controller
 print(json.dumps({'vendor_hashes': len(manifest['files']), 'generated_derivatives': 4,
                   'deterministic': True, 'tamper_rejected': True, 'geometry_cases': cases,
+                  'optical_mask_coordinate_cases': mask_cases,
+                  'three_live_surfaces_masked': True, 'capture_mask_uses_live_path': True,
                   'material_expressions_unchanged': True, 'native_swift_checked': False}))

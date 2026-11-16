@@ -32,6 +32,17 @@ def publish(path, data):
 
 
 def adapt_tabbar(text):
+    # The moving lens is an ancestor-owned sibling, NOT a child of the bar.
+    # Mask each actual glass surface; clipping only backgroundView misses it.
+    text = replace_once(text,
+        '        backgroundGlassView.providesCaptureSnapshot = true',
+        '''        backgroundGlassView.markfontClipsOpticalBounds = true
+        selectionView.markfontClipsOpticalBounds = true
+        backgroundGlassView.providesCaptureSnapshot = true''')
+    text = replace_once(text,
+        '        let glassView = TheseusView(configuration: config)',
+        '''        let glassView = TheseusView(configuration: config)
+        glassView.markfontClipsOpticalBounds = true''')
     text = replace_once(text, 'usesIOS26Look ? 10.25 : 15', '0 // MarkFont: four equal slots across the full outer bar')
     text = replace_once(text, 'usesIOS26Look ? Self.iOS26PillSize : Self.pillSize',
                         'CGSize(width: max(contentBarFrame.width / CGFloat(max(items.count, 1)) - 8, 1), height: max(barHeight - 8, 1))')
@@ -71,6 +82,66 @@ def adapt_tabbar(text):
 
 
 def adapt_view(text):
+    text = replace_once(text, 'public class TheseusView: UIView {',
+        '''public class TheseusView: UIView {
+
+    // Opt-in for MarkFont's three tab-bar surfaces, including the lens that
+    // lives outside the bar subtree. Not an outer rectangular bounds clip.
+    var markfontClipsOpticalBounds = false {
+        didSet { markfontUpdateOpticalMask() }
+    }
+    private let markfontOpticalMask = CAShapeLayer()
+
+    public override var bounds: CGRect {
+        didSet {
+            if bounds != oldValue { markfontUpdateOpticalMask() }
+        }
+    }
+
+    // Shared by the live surface and its capture twin. Shape insets can change
+    // without changing drawableSize during drag/morph, so use configuration,
+    // not a cached frame or the 30Hz host refresh.
+    func markfontOpticalPath(in referenceFrame: CGRect) -> CGPath {
+        let body = bounds.insetBy(dx: shape.widthInset, dy: shape.heightInset)
+        guard body.width.isFinite, body.height.isFinite,
+              body.width > 0, body.height > 0,
+              morph.scale.x.isFinite, morph.scale.y.isFinite else {
+            return UIBezierPath().cgPath
+        }
+        let limit = min(body.width, body.height) / 2
+        let radius = shape.cornerRadius < 0 ? limit : min(max(shape.cornerRadius, 0), limit)
+        let path = UIBezierPath(roundedRect: body, cornerRadius: radius)
+        path.apply(CGAffineTransform(translationX: -bounds.midX, y: -bounds.midY))
+        path.apply(CGAffineTransform(scaleX: max(morph.scale.x, 0.0001),
+                                     y: max(morph.scale.y, 0.0001)))
+        path.apply(CGAffineTransform(translationX: bounds.midX - referenceFrame.minX,
+                                     y: bounds.midY - referenceFrame.minY))
+        return path.cgPath
+    }
+
+    private func markfontUpdateOpticalMask() {
+        guard markfontClipsOpticalBounds else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let padding = configuration.drawPadding(for: bounds.size)
+        let maskFrame = bounds.insetBy(dx: -padding.x, dy: -padding.y)
+        markfontOpticalMask.frame = maskFrame
+        markfontOpticalMask.contentsScale = metalLayer?.contentsScale ?? UIScreen.main.scale
+        markfontOpticalMask.fillColor = UIColor.black.cgColor
+        markfontOpticalMask.path = markfontOpticalPath(in: maskFrame)
+        if layer.mask !== markfontOpticalMask { layer.mask = markfontOpticalMask }
+        CATransaction.commit()
+    }''')
+    text = replace_once(text,
+        '            renderer?.updateConfiguration(configuration)',
+        '''            markfontUpdateOpticalMask()
+            renderer?.updateConfiguration(configuration)''')
+    text = replace_once(text,
+        '''    public override func layoutSubviews() {
+        super.layoutSubviews()''',
+        '''    public override func layoutSubviews() {
+        super.layoutSubviews()
+        markfontUpdateOpticalMask()''')
     text = replace_once(text, '            self?.captureSnapshot = image\n            self?.snapshotDidUpdate?()',
         '''            guard let self = self, let size = self.metalLayer?.drawableSize,
                   image.width == Int(size.width), image.height == Int(size.height) else { return }
@@ -174,9 +245,17 @@ def adapt_compensation(text):
                 entry.snapshotLayer = layer
             }''')
     text = replace_once(text, '    private static func apply(to view: UIView, entries: inout [Entry]) {',
-        '''    // Only temporary capture layers are masked. Live Metal keeps its full
-    // optical padding, original shader alpha, shadow and refractive material.
+        '''    // Opted-in tab-bar surfaces use exactly the same mask for live output
+    // and capture replacements, including insets and morph-scale changes.
     private static func maskCaptureReplacement(_ layer: CALayer, for glass: TheseusView) {
+        if glass.markfontClipsOpticalBounds {
+            let mask = CAShapeLayer()
+            mask.frame = layer.bounds
+            mask.path = glass.markfontOpticalPath(in: layer.frame)
+            mask.fillColor = UIColor.black.cgColor
+            layer.mask = mask
+            return
+        }
         let shape = glass.shape
         let body = glass.bounds.insetBy(dx: shape.widthInset, dy: shape.heightInset)
             .offsetBy(dx: -layer.frame.minX, dy: -layer.frame.minY)

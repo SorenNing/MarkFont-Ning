@@ -20,9 +20,12 @@ fills the 72pt outer bar. The extra 0.8pt moving-lens outset is removed.
 Original gesture recognition, lift, follow, stretch and morph springs remain.
 Requested drag centers stop at the first/last slot center; the original 7.2pt
 end overrun no longer pushes the lens past its edge slot. Dynamic lift/stretch
-and optical shadows still extend beyond their resting frame. The host is not
-blanket-clipped: this preserves original optical output and does not promise a
-strict 64pt screen-space height during press animations.
+still extend beyond their resting frame. The outer host remains unclipped;
+each of the three actual Theseus surfaces now opts into a capsule alpha mask.
+This includes the active lens, an ancestor-owned sibling outside the bar tree.
+Its mask follows bounds, shape insets and morph scale synchronously. This trims
+optical output outside the shape, including shader shadows; it is not an exact
+copy of upstream's complete unmasked visual output or a fixed screen-space height.
 
 Localized titles remain 挂载 / 字体 / 字体库 / 设置; icons remain link / Aa /
 books.vertical / gearshape. Aa is a transparent 17pt heavy template. Initial
@@ -43,10 +46,12 @@ ghost glyphs during movement. Source inspection found independent concrete fault
   are rejected instead of stretching an old image into the new frame.
 - CaptureCompensation no longer paints a rectangular glass.backgroundColor when
   a snapshot is unavailable. It adds a temporary rounded, shape-inset-aware layer
-  with the original captureVeilColor. Actual snapshot replacement layers retain
-  their original alpha, full padded frame and chrome override; no new mask is
-  applied to real snapshots. Live Metal also remains unmasked with original
-  shader alpha, shadows and material.
+  with the original captureVeilColor. Both real snapshot and veil replacement
+  layers are masked. The three tab-bar surfaces use the same optical path for
+  live output and capture replacement, including the ancestor-owned drag lens.
+  Updates follow bounds, configuration shape insets and morph scale; no 30Hz
+  host-layout delay is used. Optical shadow pixels outside the mask are clipped.
+  Shader/material bytes and animation spring values are unchanged.
 - A hidden Metal host is skipped rather than replaced by a stale frame/veil.
   Capture begin/end and renderer twin swaps use disabled-action transactions,
   with defer restoration in the same render call, including early exits.
