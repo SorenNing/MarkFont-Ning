@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Append MarkFont's minimal bridge extension; never mutate the pinned vendor source.
+"""Generate reviewed geometry/capture derivatives without modifying vendor files.
 Usage: python3 prepare_theseus_tabbar.py INPUT/TheseusTabBar.swift OUTPUT.swift
-Compile OUTPUT instead of INPUT, in the SAME module as the remaining Theseus files.
+Also emits TheseusView, TheseusRenderer and CaptureCompensation beside OUTPUT.
+Compile all four derivatives instead of their vendor inputs, in the SAME module.
 """
 import hashlib
 import os
 from pathlib import Path
 import sys
 import tempfile
+from theseus_geometry import adapt_tabbar, prepare_support
 
 source = Path(sys.argv[1]).read_bytes()
 EXPECTED_SHA256 = "20e29ef46313b5a96daea9b1146ce7726a392a91795c1d574b998fe22509d921"
@@ -55,7 +57,11 @@ extension TheseusTabBar {
 '''
 output = Path(sys.argv[2])
 output.parent.mkdir(parents=True, exist_ok=True)
-generated = b"// Generated from pinned Theseus; see app/UI/prepare_theseus_tabbar.py.\n" + source + extension.encode("utf-8")
+prepare_support(Path(sys.argv[1]).resolve().parents[3], output.parent)
+generated = ("// Generated geometry derivative; vendor remains pinned and pristine.\n" +
+             adapt_tabbar(source.decode("utf-8")) +
+             extension.replace("the complete pinned implementation above is unchanged.",
+                               "geometry derivative above; original material parameters retained.")).encode("utf-8")
 # Recursive make passes share this architecture-independent source. Avoid
 # touching unchanged output, and never expose a partially written Swift file.
 if not output.is_file() or output.read_bytes() != generated:

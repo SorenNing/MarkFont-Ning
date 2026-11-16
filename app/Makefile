@@ -23,7 +23,8 @@ MARKFONT_THESEUS_GENERATED := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)
 MARKFONT_THESEUS_TABBAR := $(MARKFONT_THESEUS_GENERATED)/TheseusTabBar.swift
 MARKFONT_THESEUS_SHIM := $(MARKFONT_THESEUS_GENERATED)/TheseusBundle.swift
 MARKFONT_THESEUS_BUNDLE := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/$(or $(THEOS_CURRENT_ARCH),universal)/Resources/Theseus_Theseus.bundle
-MARKFONT_THESEUS_SWIFT := $(shell find $(MARKFONT_THESEUS_ROOT) -type f -name '*.swift' ! -path '*/Components/TheseusTabBar.swift' 2>/dev/null | LC_ALL=C sort)
+MARKFONT_THESEUS_SWIFT := $(shell find $(MARKFONT_THESEUS_ROOT) -type f -name '*.swift' ! -path '*/Components/TheseusTabBar.swift' ! -path '*/Core/TheseusView.swift' ! -path '*/Rendering/TheseusRenderer.swift' ! -path '*/Rendering/CaptureCompensation.swift' 2>/dev/null | LC_ALL=C sort)
+MARKFONT_THESEUS_SWIFT += $(addprefix $(MARKFONT_THESEUS_GENERATED)/,TheseusView.swift TheseusRenderer.swift CaptureCompensation.swift)
 MARKFONT_THESEUS_METAL := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f -name '*.metal' 2>/dev/null | LC_ALL=C sort)
 MARKFONT_THESEUS_SHADER_INPUTS := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f 2>/dev/null | LC_ALL=C sort)
 FontManager_FILES += $(MARKFONT_THESEUS_SWIFT) $(MARKFONT_THESEUS_TABBAR) \
