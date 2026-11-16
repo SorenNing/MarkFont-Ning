@@ -84,6 +84,12 @@ final class FMTheseusTabBar: UIView {
         bar.invalidateBackground()
     }
 
+    // Objective-C calls land on this wrapper, not on the embedded Theseus bar.
+    @objc(markfontSetTransitioning:)
+    func markfontSetTransitioning(_ transitioning: Bool) {
+        bar.markfontSetTransitioning(transitioning)
+    }
+
     override func didMoveToWindow() {
         super.didMoveToWindow()
         lastVisibility = nil
