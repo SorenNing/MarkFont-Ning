@@ -13,10 +13,9 @@
 @property(nonatomic, copy) void (^selectionHandler)(NSInteger index);
 @property(nonatomic, readonly) NSInteger selectedIndex;
 - (void)setSelectedIndex:(NSInteger)index animated:(BOOL)animated;
-- (void)markfontSetTransitioning:(BOOL)transitioning;
 @end
 
-@interface FMTabBarController () <UIGestureRecognizerDelegate, UINavigationControllerDelegate>
+@interface FMTabBarController ()
 @property(nonatomic, strong) id<FMProfileWorkspace> workspace;
 @property(nonatomic, strong) NSArray<UINavigationController *> *controllers;
 @property(nonatomic, strong) FMTheseusTabBar *tabBar;
@@ -63,7 +62,6 @@
         UINavigationController *navigation =
             [[UINavigationController alloc] initWithRootViewController:root];
         FMConfigureNavigationController(navigation);
-        navigation.delegate = self;
         UIView *stackBackground = FMGlassBackgroundView();
         stackBackground.translatesAutoresizingMaskIntoConstraints = NO;
         [navigation.view insertSubview:stackBackground atIndex:0];
@@ -142,24 +140,6 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.view bringSubviewToFront:self.tabBar];
-}
-
-- (void)navigationController:(UINavigationController *)navigationController
-       willShowViewController:(UIViewController *)viewController
-                    animated:(BOOL)animated {
-    (void)navigationController;
-    (void)viewController;
-    (void)animated;
-    [self.tabBar markfontSetTransitioning:YES];
-}
-
-- (void)navigationController:(UINavigationController *)navigationController
-        didShowViewController:(UIViewController *)viewController
-                     animated:(BOOL)animated {
-    (void)navigationController;
-    (void)viewController;
-    (void)animated;
-    [self.tabBar markfontSetTransitioning:NO];
 }
 
 - (void)switchToIndex:(NSInteger)index animated:(BOOL)animated {

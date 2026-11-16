@@ -84,12 +84,6 @@ final class FMTheseusTabBar: UIView {
         bar.invalidateBackground()
     }
 
-    // Objective-C calls land on this wrapper, not on the embedded Theseus bar.
-    @objc(markfontSetTransitioning:)
-    func markfontSetTransitioning(_ transitioning: Bool) {
-        bar.markfontSetTransitioning(transitioning)
-    }
-
     override func didMoveToWindow() {
         super.didMoveToWindow()
         lastVisibility = nil
@@ -116,9 +110,12 @@ final class FMTheseusTabBar: UIView {
         for _ in 0..<32 {
             guard let view = current else { return true }
             if view.isHidden || view.alpha <= 0.001 { return false }
+            if view === window { return true }
             current = view.superview
         }
-        return false
+        // Deep attached hierarchies are still visible. Returning false here
+        // incorrectly paused the whole bar during ordinary layout callbacks.
+        return current != nil
     }
 
     private func synchronizeVisibility() {

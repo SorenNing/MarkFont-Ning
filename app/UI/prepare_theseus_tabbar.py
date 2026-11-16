@@ -26,22 +26,6 @@ extension TheseusTabBar {
         updateSelection(animated: animated)
     }
 
-    // Navigation transitions must not race the Metal renderer with a changing
-    // UINavigationController view hierarchy.
-    @objc(markfontSetTransitioning:)
-    func markfontSetTransitioning(_ transitioning: Bool) {
-        if transitioning {
-            teardownTheseus()
-            backgroundGlassView.pauseRendering()
-            selectionView.pauseRendering()
-            return
-        }
-        guard window != nil, !isHidden else { return }
-        backgroundGlassView.resumeRendering()
-        selectionView.resumeRendering()
-        showTheseus()
-    }
-
     // Called only on host visibility transitions. The original lens keeps its
     // own source, capture chain, container, clipping and rendering lifecycle.
     func markfontSynchronize(host: UIView, active: Bool) {
@@ -68,6 +52,9 @@ extension TheseusTabBar {
             glass.setCaptureExcludedViews(exclusions)
             glass.resumeRendering()
         }
+        // The selected pill is a separate ancestor-owned Metal view. It must
+        // be created and shown on the first attached layout, not only on drag.
+        showTheseus()
     }
 }
 '''
