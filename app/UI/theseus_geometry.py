@@ -60,24 +60,8 @@ def adapt_tabbar(text):
     # Keep the original pan/follow springs but constrain their requested frame.
     text = replace_once(text, 'let centerX = min(max(point.x, first.midX - Self.lensOverrun), last.midX + Self.lensOverrun)',
                         'let centerX = min(max(point.x, first.midX), last.midX)')
-    # The prewarm callback runs after the first visible layout. Pausing the
-    # ancestor-owned lens there hides the selected pill until the next drag.
-    text = replace_once(text, '                self.theseusView?.pauseRendering()',
-                        '                self.theseusView?.resumeRendering()')
-    # Do not remove the Metal view while UINavigationController is running a
-    # pop transition. Removing it from didMoveToWindow can recursively tear
-    # down the renderer while a frame callback is still in flight.
-    text = replace_once(text,
-        '''        theseusView?.pauseRendering()
-        theseusView?.removeFromSuperview()
-        theseusView = nil''',
-        '''        if let glassView = theseusView {
-            glassView.layer.removeAllAnimations()
-            glassView.isHidden = true
-            glassView.alpha = 0
-            glassView.continuousUpdate = false
-            glassView.pauseRendering()
-        }''')
+    # Prewarm, show/hide, teardown and window attachment stay byte-for-byte
+    # upstream. A warmed drag lens must remain hidden/paused until interaction.
     return text
 
 

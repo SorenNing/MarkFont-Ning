@@ -59,6 +59,24 @@ with tempfile.TemporaryDirectory() as directory:
     assert 'defer { CATransaction.commit() }' in compensation
     # Optical/material expressions in the generated implementation must survive byte-for-byte.
     original = source.read_text()
+    # Restore upstream state ownership, not just its numeric material values.
+    # These complete transition/lifecycle regions must remain byte-identical.
+    original_regions = [
+        ('    private func showTheseus() {', '    private func hideTheseus() {'),
+        ('    private func hideTheseus() {', '    /// Places the lens without resizing its drawable'),
+        ('    private func teardownTheseus() {', '    public override func didMoveToWindow() {'),
+        ('    public override func didMoveToWindow() {', '\n}\n\n\nprivate class TabItemView'),
+        ('    private func updateAppearanceForCurrentMode() {', '    struct BarShadow:'),
+    ]
+    for start, end in original_regions:
+        assert original.split(start, 1)[1].split(end, 1)[0] == tab.split(start, 1)[1].split(end, 1)[0], start
+    bridge = tab.split('extension TheseusTabBar {', 1)[1]
+    for forbidden in ['showTheseus()', 'hideTheseus()', 'teardownTheseus()',
+                      'resetAdaptation()', 'setupTheseus()', 'glass.sourceView = host.window']:
+        assert forbidden not in bridge, forbidden
+    assert 'glass.sourceView = theseusSourceView' in bridge
+    assert '!lens.isHidden, lens.alpha > 0.001' in bridge
+    assert 'lens.continuousUpdate' in bridge
     for start, end in [('        var config = TheseusConfiguration.lens', '        let glassView = TheseusView(configuration: config)'),
                        ('    private func setLensFill(', '    private func setLensRefraction(')]:
         assert original.split(start)[1].split(end)[0] == tab.split(start)[1].split(end)[0]
@@ -117,4 +135,6 @@ print(json.dumps({'vendor_hashes': len(manifest['files']), 'generated_derivative
                   'deterministic': True, 'tamper_rejected': True, 'geometry_cases': cases,
                   'optical_mask_coordinate_cases': mask_cases,
                   'three_live_surfaces_masked': True, 'capture_mask_uses_live_path': True,
+                  'upstream_transition_regions_identical': len(original_regions),
+                  'host_forced_press_or_teardown': False,
                   'material_expressions_unchanged': True, 'native_swift_checked': False}))

@@ -26,14 +26,13 @@ extension TheseusTabBar {
         updateSelection(animated: animated)
     }
 
-    // Called only on host visibility transitions. The original lens keeps its
-    // own source, capture chain, container, clipping and rendering lifecycle.
+    // Host visibility may pause rendering, but never starts a press, shows
+    // a drag lens or takes ownership of upstream's teardown/window lifecycle.
     func markfontSynchronize(host: UIView, active: Bool) {
         if !active {
-            teardownTheseus()
-            resetAdaptation()
             backgroundGlassView.pauseRendering()
             selectionView.pauseRendering()
+            theseusView?.pauseRendering()
             return
         }
         // Base surfaces must not recapture the application host or foreground
@@ -48,13 +47,16 @@ extension TheseusTabBar {
             child = parent
         }
         for glass in [backgroundGlassView, selectionView] {
-            glass.sourceView = host.window
+            glass.sourceView = theseusSourceView
             glass.setCaptureExcludedViews(exclusions)
             glass.resumeRendering()
         }
-        // The selected pill is a separate ancestor-owned Metal view. It must
-        // be created and shown on the first attached layout, not only on drag.
-        showTheseus()
+        // Resume only an interaction already made visible by upstream. Idle
+        // selectionView is not the drag lens; never manufacture a touch here.
+        if let lens = theseusView, !lens.isHidden, lens.alpha > 0.001,
+           lens.continuousUpdate {
+            lens.resumeRendering()
+        }
     }
 }
 '''

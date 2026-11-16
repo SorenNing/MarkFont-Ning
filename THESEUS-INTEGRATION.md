@@ -96,8 +96,15 @@ packaging retain existing wiring. This work does not compile or package a binary
 
 Objective-C calls the explicit bridge selectors initWithTitles:,
 setSelectedIndex:animated:, selectionHandler and selectedIndex. The weak-target
-30Hz common-mode display link refreshes while visible; activation resumes base
-renderers and inactivity tears down the moving lens and pauses the base pair.
+30Hz common-mode display link refreshes while visible. Host visibility only
+pauses rendering and resumes the base pair; an existing visible interaction
+lens may resume, but a hidden prewarmed lens stays hidden and paused.
+The bridge never calls showTheseus, hideTheseus, setupTheseus or teardownTheseus.
+Original prewarm, show/hide, teardown and window-attachment implementations are
+byte-identical to upstream. Base surfaces use the original theseusSourceView
+rather than replacing it with the window. The three surface masks and the
+previously documented size/capture adaptations remain; this restores upstream
+state transitions, not every pixel of unadapted upstream output.
 
 ## Validation limits
 
