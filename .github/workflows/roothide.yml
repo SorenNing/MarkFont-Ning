@@ -9,18 +9,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install tools
-        run: brew install ldid dpkg
-      - name: Set up Theos and SDK
+        run: brew install ldid dpkg python
+      - name: Prepare Xcode Swift and Metal toolchains
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphoneos swiftc --version
+          # Xcode 26+ may distribute Metal as a separate optional component.
+          if ! xcrun --sdk iphoneos metal --version >/dev/null 2>&1; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+          xcrun --sdk iphoneos metal --version
+          xcrun --sdk iphoneos --find metallib
+          # Use the SDK shipped with this Swift compiler for compilation AND link.
+          echo "MARKFONT_SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)" >> "$GITHUB_ENV"
+      - name: Set up Theos
         run: |
           git clone --depth 1 --recursive https://github.com/roothide/theos.git "$HOME/theos"
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$RUNNER_TEMP/sdks"
-          git -C "$RUNNER_TEMP/sdks" sparse-checkout set iPhoneOS16.5.sdk
-          cp -R "$RUNNER_TEMP/sdks/iPhoneOS16.5.sdk" "$HOME/theos/sdks/"
       - name: Build RootHide package
         run: |
           chmod +x scripts/*
           export THEOS="$HOME/theos"
-          make THEOS_PACKAGE_SCHEME=roothide TARGET=iphone:clang:16.5:16.0 FINALPACKAGE=1 package
+          make THEOS_PACKAGE_SCHEME=roothide TARGET=iphone:clang:latest:16.0 \
+            SYSROOT="$MARKFONT_SDKROOT" ISYSROOT="$MARKFONT_SDKROOT" FINALPACKAGE=1 package
+          test -n "$(find .theos -path '*/FontManager.app/Theseus_Theseus.bundle/default.metallib' -size +0 -print -quit)"
           test -n "$(find packages -name '*_iphoneos-arm64e.deb' -print -quit)"
           shasum -a 256 packages/*_iphoneos-arm64e.deb
       - uses: actions/upload-artifact@v4

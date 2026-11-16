@@ -27,3 +27,25 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Theseus
+
+Theseus — Copyright 2025 Vadim Drobinin.
+
+This product includes software developed by Vadim Drobinin
+(https://drobinin.com).
+
+Source: https://github.com/valzevul/Theseus
+
+Pinned revision: `71ca1c127a4e7fe3387361f160c4890dbd427f66`.
+Licensed under the Apache License, Version 2.0. The complete upstream license
+and attribution notice are retained in `vendor/Theseus/LICENSE` and
+`vendor/Theseus/NOTICE`; `vendor/Theseus/UPSTREAM.json` records file SHA-256s.
+
+Vendor files remain byte-for-byte upstream. MarkFont generates a derived
+`TheseusTabBar.swift` outside vendor at build time using
+`app/UI/prepare_theseus_tabbar.py`. The application-specific changes preserve
+MarkFont's tab geometry, label typography and semantic colors, add capsule
+clipping, adapt programmatic selection, and manage backdrop exclusions and
+visibility. Original Theseus glass rendering, shaders, lens optics, gestures,
+and animation implementations remain in use. See `THESEUS-INTEGRATION.md`.
