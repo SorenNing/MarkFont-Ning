@@ -4,8 +4,10 @@ Usage: python3 prepare_theseus_tabbar.py INPUT/TheseusTabBar.swift OUTPUT.swift
 Compile OUTPUT instead of INPUT, in the SAME module as the remaining Theseus files.
 """
 import hashlib
+import os
 from pathlib import Path
 import sys
+import tempfile
 
 source = Path(sys.argv[1]).read_bytes()
 EXPECTED_SHA256 = "20e29ef46313b5a96daea9b1146ce7726a392a91795c1d574b998fe22509d921"
@@ -137,4 +139,16 @@ extension TheseusTabBar {
 '''
 output = Path(sys.argv[2])
 output.parent.mkdir(parents=True, exist_ok=True)
-output.write_text("// Generated from pinned Theseus; see app/UI/prepare_theseus_tabbar.py.\n" + text)
+generated = ("// Generated from pinned Theseus; see app/UI/prepare_theseus_tabbar.py.\n" + text).encode("utf-8")
+# Recursive make passes share this architecture-independent source. Avoid
+# touching unchanged output, and never expose a partially written Swift file.
+if not output.is_file() or output.read_bytes() != generated:
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=output.parent, prefix=output.name + ".", delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(generated)
+        os.replace(temporary, output)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)

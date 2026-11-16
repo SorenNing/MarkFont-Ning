@@ -18,10 +18,11 @@ FontManager_FILES = main.m FMAppDelegate.m FMDeviceProfileWorkspace.m \
 # Compile upstream and the ObjC-visible bridge as one module (FontManager).
 # The original tab bar is replaced only in build output by the UI generator.
 MARKFONT_THESEUS_ROOT := ../vendor/Theseus/Sources/Theseus
-MARKFONT_THESEUS_GENERATED := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/$(or $(THEOS_CURRENT_ARCH),universal)
+# Swift inputs are identical across recursive architecture passes.
+MARKFONT_THESEUS_GENERATED := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/generated
 MARKFONT_THESEUS_TABBAR := $(MARKFONT_THESEUS_GENERATED)/TheseusTabBar.swift
 MARKFONT_THESEUS_SHIM := $(MARKFONT_THESEUS_GENERATED)/TheseusBundle.swift
-MARKFONT_THESEUS_BUNDLE := $(MARKFONT_THESEUS_GENERATED)/Resources/Theseus_Theseus.bundle
+MARKFONT_THESEUS_BUNDLE := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/$(or $(THEOS_CURRENT_ARCH),universal)/Resources/Theseus_Theseus.bundle
 MARKFONT_THESEUS_SWIFT := $(shell find $(MARKFONT_THESEUS_ROOT) -type f -name '*.swift' ! -path '*/Components/TheseusTabBar.swift' 2>/dev/null | LC_ALL=C sort)
 MARKFONT_THESEUS_METAL := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f -name '*.metal' 2>/dev/null | LC_ALL=C sort)
 MARKFONT_THESEUS_SHADER_INPUTS := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f 2>/dev/null | LC_ALL=C sort)
@@ -45,16 +46,20 @@ FontManager_CFLAGS = -fobjc-arc -Wall -Wextra $(MARKFONT_PATH_CFLAGS) -I../share
 FontManager_CODESIGN_FLAGS = -Sentitlements.plist -Icom.hmmzzz.fontmanager
 FontManager_RESOURCE_DIRS = Resources
 
+# Theos enumerates Swift inputs and checks __USER_FILES in its own independent
+# before-FontManager-all:: recipe. A later double-colon prerequisite cannot
+# order generation before that check. Prepare only lightweight Swift sources
+# synchronously, before application.mk, for direct and recursive developer make.
+# $(shell) does not propagate failures, so capture and check the exit status.
+# A clean-only invocation must remain usable even with missing vendor inputs.
+ifneq ($(if $(MAKECMDGOALS),$(filter-out clean internal-clean after-clean,$(MAKECMDGOALS)),all),)
+MARKFONT_THESEUS_PREPARE_STATUS := $(shell python3 UI/prepare_theseus_tabbar.py "$(MARKFONT_THESEUS_ROOT)/Components/TheseusTabBar.swift" "$(MARKFONT_THESEUS_TABBAR)" >&2 && bash ../scripts/prepare-theseus-resources shim "$(MARKFONT_THESEUS_SHIM)" >&2; echo $$?)
+ifneq ($(MARKFONT_THESEUS_PREPARE_STATUS),0)
+$(error Theseus Swift source preparation failed (status $(MARKFONT_THESEUS_PREPARE_STATUS)))
+endif
+endif
+
 include $(THEOS_MAKE_PATH)/application.mk
-
-# Explicit prerequisites also cover Theos's recursive per-architecture builds
-# and parallel resource copying; no source is generated at make parse time.
-$(MARKFONT_THESEUS_TABBAR): $(MARKFONT_THESEUS_ROOT)/Components/TheseusTabBar.swift UI/prepare_theseus_tabbar.py
-	@mkdir -p "$(dir $@)"
-	python3 UI/prepare_theseus_tabbar.py "$<" "$@"
-
-$(MARKFONT_THESEUS_SHIM): ../scripts/prepare-theseus-resources
-	bash ../scripts/prepare-theseus-resources shim "$@"
 
 $(MARKFONT_THESEUS_BUNDLE)/default.metallib: $(MARKFONT_THESEUS_SHADER_INPUTS) ../scripts/prepare-theseus-resources
 	bash ../scripts/prepare-theseus-resources metal "$(MARKFONT_THESEUS_ROOT)/Shaders" "$(MARKFONT_THESEUS_BUNDLE)" "$(SYSROOT)" "$(_THEOS_TARGET_OS_DEPLOYMENT_VERSION)"
@@ -65,7 +70,7 @@ markfont-theseus-inputs:
 	@test -n "$(MARKFONT_THESEUS_METAL)" || { echo 'Missing vendor/Theseus Metal shaders' >&2; exit 1; }
 	@test -f UI/FMTheseusTabBar.swift || { echo 'Missing UI/FMTheseusTabBar.swift bridge' >&2; exit 1; }
 
-before-FontManager-all:: markfont-theseus-inputs $(MARKFONT_THESEUS_TABBAR) $(MARKFONT_THESEUS_SHIM)
+before-FontManager-all:: markfont-theseus-inputs
 
 # Keep copying in our own double-colon recipe: adding prerequisites to Theos's
 # separate resource recipe would not order that recipe under parallel make.

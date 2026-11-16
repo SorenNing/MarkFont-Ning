@@ -59,7 +59,23 @@ third-party attribution discloses these adaptations.
 
 ## Build contract
 
-Run from `app`:
+`app/Makefile` synchronously prepares the tab-bar adaptation and `Bundle.module`
+shim before including Theos `application.mk`. Theos enumerates Swift inputs and
+checks `__USER_FILES` in its own `before-FontManager-all::` recipe; a separate
+same-name double-colon rule cannot order generation ahead of that check.
+The checked `$(shell ...)` status stops make during parsing if either generator
+fails, even when stale output exists. Direct developer make needs no wrapper.
+Pure `clean`, `internal-clean` and `after-clean` invocations skip preparation.
+
+Both Swift files use fixed architecture-independent paths under
+`.theos/markfont-theseus/<scheme>/generated/`. Generators publish complete files
+atomically and leave unchanged content timestamps intact across recursive
+arm64/arm64e passes. Preparation only runs Python and Bash; Metal compilation
+and resource/license copying retain their existing resource-target ordering
+and per-architecture bundle paths. Make parsing (including `make -n`) may
+prepare these Swift files; it does not compile them.
+
+To run only the tab-bar generator manually, run from `app`:
 
 ```sh
 python3 UI/prepare_theseus_tabbar.py \
@@ -118,6 +134,17 @@ Performed without building or pushing: generator executes successfully on the
 pinned input, vendor byte comparison against downloaded commit, manifest hash
 verification, negative tampered-input rejection, retained outer-constraint and
 routing comparison, and `git diff --check`.
+
+The source-preparation fix was additionally checked in an isolated source copy
+using the authentic enumeration and existence-check recipe from RootHide Theos
+revision `958fea4f779943505b15b93c88bb4db8d97b346d`
+(`makefiles/instance/rules.mk`). Fresh/default/parallel input checks passed for
+both package schemes and arm64/arm64e variable settings, with 36 Swift inputs
+present before `application.mk` inclusion and unchanged generation timestamps
+on repeat passes. Tampered/missing pinned input, stale generated output,
+shim failure and an invalid output destination failed closed. Clean-only
+invocations worked with invalid/missing input. These checks used only the
+input-check snippets, without invoking Theos compiler or resource targets.
 
 No native Swift/ObjC/Metal build, link, device rendering, performance, VoiceOver,
 Reduce Motion, Reduce Transparency or drag/rotation acceptance test was run.
