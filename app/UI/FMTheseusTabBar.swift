@@ -20,15 +20,10 @@ final class FMTheseusTabBar: UIView {
         precondition(titles.count == 4)
         backgroundColor = .clear
         isOpaque = false
-        // The real capsule and its Metal subviews mask themselves. The host
-        // remains unclipped so upstream's lifted, sibling-hosted lens can move.
+        // Preserve the original optical outsets and press/lift excursion.
         clipsToBounds = false
-        layer.cornerRadius = 36
-        layer.cornerCurve = .continuous
         accessibilityIdentifier = "markfont.theseus.tabbar"
         bar.barHeight = 72
-        bar.selectedTintColor = .label
-        bar.unselectedTintColor = .secondaryLabel
         bar.items = [
             TheseusTabBarItem(icon: UIImage(systemName: "link"), title: titles[0]),
             TheseusTabBarItem(icon: Self.aaGlyph(), title: titles[1]),
@@ -91,6 +86,7 @@ final class FMTheseusTabBar: UIView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        lastVisibility = nil
         refreshLink?.invalidate()
         refreshLink = nil
         refreshTarget = nil
@@ -121,9 +117,9 @@ final class FMTheseusTabBar: UIView {
 
     private func synchronizeVisibility() {
         let active = isActuallyVisible
-        bar.markfontSynchronize(host: self, active: active)
         if lastVisibility != active {
             lastVisibility = active
+            bar.markfontSynchronize(host: self, active: active)
             if active { bar.invalidateBackground() }
         }
     }
