@@ -106,7 +106,11 @@ activity. Hidden/offscreen glass renderers pause; any ancestor-hosted lens is
 torn down once on invisibility. Detaching invalidates the bridge display link;
 backgrounding pauses it, activation resumes it. A visible bar still refreshes
 at 30Hz while idle; device power measurement and idle-rate tuning are pending.
-The upstream lens has its own original animation cadence.
+The upstream lens has its own original animation cadence. Its application-only
+`FMTheseusLensView` subclass updates capsule clipping in `layoutSubviews`, so
+animated bounds do not wait for the host refresh timer. The shader's negative
+lens-radius sentinel stays unchanged. Hidden or alpha-zero glass stays paused
+even while the host is visible.
 
 ## Checks and limits
 

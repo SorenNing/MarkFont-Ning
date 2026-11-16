@@ -37,7 +37,7 @@ replace("""        backgroundView.clipsToBounds = false""", """        backgroun
         backgroundView.layer.cornerCurve = .continuous
         backgroundView.clipsToBounds = true""")
 replace("""        let glassView = TheseusView(configuration: config)
-        glassView.sourceView = sourceView""", """        let glassView = TheseusView(configuration: config)
+        glassView.sourceView = sourceView""", """        let glassView = FMTheseusLensView(configuration: config)
         glassView.backgroundColor = .clear
         glassView.isOpaque = false
         glassView.layer.cornerCurve = .continuous
@@ -77,6 +77,16 @@ replace("""        guard let image = image, isSymbol(image) else { return box }"
         }""")
 text += '''
 // MarkFont application adapter. Compiled alongside, never written over, vendor.
+private final class FMTheseusLensView: TheseusView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // Track animated bounds before display, independently of the host timer.
+        // Leave the shader's negative lens-radius sentinel untouched.
+        layer.cornerRadius = bounds.height / 2
+        layer.cornerCurve = .continuous
+        clipsToBounds = true
+    }
+}
 extension TheseusTabBar {
     func markfontSelect(_ index: Int, animated: Bool) {
         guard items.indices.contains(index) else { return }
@@ -119,7 +129,8 @@ extension TheseusTabBar {
             glass.layer.cornerRadius = min(abs(glass.shape.cornerRadius), glass.bounds.height / 2)
             glass.layer.cornerCurve = .continuous
             glass.clipsToBounds = true
-            if active { glass.resumeRendering() } else { glass.pauseRendering() }
+            let visible = active && !glass.isHidden && glass.alpha > 0.001
+            if visible { glass.resumeRendering() } else { glass.pauseRendering() }
         }
     }
 }
