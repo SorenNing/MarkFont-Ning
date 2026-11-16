@@ -39,9 +39,9 @@ with tempfile.TemporaryDirectory() as directory:
     region = renderer.split('private func calculateCaptureRegion')[1].split('private func setupNotifications')[0]
     assert 'insetBy' not in region and 'return frameInSource' in region
     real_snapshot = compensation.split('if let snapshot = glass.captureSnapshot {')[1].split('} else {')[0]
-    assert 'maskCaptureReplacement' not in real_snapshot
+    assert 'maskCaptureReplacement(layer, for: glass)' in real_snapshot
     assert 'glass.backgroundColor = glass.captureVeilColor' not in compensation
-    assert compensation.count('maskCaptureReplacement(layer, for: glass)') == 1
+    assert compensation.count('maskCaptureReplacement(layer, for: glass)') == 2
     assert 'defer { CATransaction.commit() }' in compensation
     # Optical/material expressions in the generated implementation must survive byte-for-byte.
     original = source.read_text()

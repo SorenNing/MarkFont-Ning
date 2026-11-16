@@ -13,9 +13,10 @@
 @property(nonatomic, copy) void (^selectionHandler)(NSInteger index);
 @property(nonatomic, readonly) NSInteger selectedIndex;
 - (void)setSelectedIndex:(NSInteger)index animated:(BOOL)animated;
+- (void)markfontSetTransitioning:(BOOL)transitioning;
 @end
 
-@interface FMTabBarController () <UIGestureRecognizerDelegate>
+@interface FMTabBarController () <UIGestureRecognizerDelegate, UINavigationControllerDelegate>
 @property(nonatomic, strong) id<FMProfileWorkspace> workspace;
 @property(nonatomic, strong) NSArray<UINavigationController *> *controllers;
 @property(nonatomic, strong) FMTheseusTabBar *tabBar;
@@ -62,6 +63,7 @@
         UINavigationController *navigation =
             [[UINavigationController alloc] initWithRootViewController:root];
         FMConfigureNavigationController(navigation);
+        navigation.delegate = self;
         UIView *stackBackground = FMGlassBackgroundView();
         stackBackground.translatesAutoresizingMaskIntoConstraints = NO;
         [navigation.view insertSubview:stackBackground atIndex:0];
@@ -110,26 +112,19 @@
 }
 
 - (void)installSwipeGestures {
-    UISwipeGestureRecognizer *left = [[UISwipeGestureRecognizer alloc]
-        initWithTarget:self action:@selector(handleTabSwipe:)];
-    left.direction = UISwipeGestureRecognizerDirectionLeft;
-    UISwipeGestureRecognizer *right = [[UISwipeGestureRecognizer alloc]
-        initWithTarget:self action:@selector(handleTabSwipe:)];
-    right.direction = UISwipeGestureRecognizerDirectionRight;
-    left.delegate = self;
-    right.delegate = self;
-    [self.view addGestureRecognizer:left];
-    [self.view addGestureRecognizer:right];
+    // UINavigationController owns the interactive edge-pop gesture. A second
+    // full-screen swipe recognizer must not compete with it during back.
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
        shouldReceiveTouch:(UITouch *)touch {
     (void)gestureRecognizer;
-    // Theseus owns drags begun on the bar; page swipes retain their routes.
-    return ![touch.view isDescendantOfView:self.tabBar];
+    // Theseus owns drags begun on the bar. Navigation owns page back gestures.
+    return NO;
 }
 
 - (void)handleTabSwipe:(UISwipeGestureRecognizer *)gesture {
+    if (self.selectedIndex < 0 || self.selectedIndex >= (NSInteger)self.controllers.count) return;
     UINavigationController *current = self.controllers[(NSUInteger)self.selectedIndex];
     if (current.viewControllers.count > 1) {
         // Inside a pushed page the same swipe means "go back".
@@ -147,6 +142,24 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self.view bringSubviewToFront:self.tabBar];
+}
+
+- (void)navigationController:(UINavigationController *)navigationController
+       willShowViewController:(UIViewController *)viewController
+                    animated:(BOOL)animated {
+    (void)navigationController;
+    (void)viewController;
+    (void)animated;
+    [self.tabBar markfontSetTransitioning:YES];
+}
+
+- (void)navigationController:(UINavigationController *)navigationController
+        didShowViewController:(UIViewController *)viewController
+                     animated:(BOOL)animated {
+    (void)navigationController;
+    (void)viewController;
+    (void)animated;
+    [self.tabBar markfontSetTransitioning:NO];
 }
 
 - (void)switchToIndex:(NSInteger)index animated:(BOOL)animated {

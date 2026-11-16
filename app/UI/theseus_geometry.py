@@ -49,6 +49,20 @@ def adapt_tabbar(text):
     # Keep the original pan/follow springs but constrain their requested frame.
     text = replace_once(text, 'let centerX = min(max(point.x, first.midX - Self.lensOverrun), last.midX + Self.lensOverrun)',
                         'let centerX = min(max(point.x, first.midX), last.midX)')
+    # Do not remove the Metal view while UINavigationController is running a
+    # pop transition. Removing it from didMoveToWindow can recursively tear
+    # down the renderer while a frame callback is still in flight.
+    text = replace_once(text,
+        '''        theseusView?.pauseRendering()
+        theseusView?.removeFromSuperview()
+        theseusView = nil''',
+        '''        if let glassView = theseusView {
+            glassView.layer.removeAllAnimations()
+            glassView.isHidden = true
+            glassView.alpha = 0
+            glassView.continuousUpdate = false
+            glassView.pauseRendering()
+        }''')
     return text
 
 
@@ -139,7 +153,10 @@ def adapt_compensation(text):
             } else {
                 glass.backgroundColor = glass.captureVeilColor
             }''',
-        '''                // Actual snapshots already carry the shader's alpha and optical outsets.
+        '''                // The temporary capture twin may contain an opaque rectangular
+                // readback around the shader's shape. Bound only this copy,
+                // retaining the original optical shadow and rim allowance.
+                maskCaptureReplacement(layer, for: glass)
                 glass.layer.addSublayer(layer)
                 entry.snapshotLayer = layer
             } else {
@@ -159,11 +176,12 @@ def adapt_compensation(text):
         let shape = glass.shape
         let body = glass.bounds.insetBy(dx: shape.widthInset, dy: shape.heightInset)
             .offsetBy(dx: -layer.frame.minX, dy: -layer.frame.minY)
+        let clipped = body.intersection(layer.bounds)
         let radius = shape.cornerRadius < 0 ? min(body.width, body.height) / 2
             : min(shape.cornerRadius, min(body.width, body.height) / 2)
         let mask = CAShapeLayer()
         mask.frame = layer.bounds
-        mask.path = UIBezierPath(roundedRect: body, cornerRadius: max(radius, 0)).cgPath
+        mask.path = UIBezierPath(roundedRect: clipped, cornerRadius: max(min(radius, min(clipped.width, clipped.height) / 2), 0)).cgPath
         mask.fillColor = UIColor.black.cgColor
         layer.mask = mask
     }
