@@ -41,5 +41,5 @@
     "Sources/Theseus/Rendering/VisualEffectFallback.swift": "e3d562950a99eea6070687dbf5bff6a4ec8a30f383f7f8d9bfa29ad95f4e57e0",
     "Sources/Theseus/Shaders/TheseusShaders.metal": "608b0a6dd118a035c72c84009b56233d69e42b3020e95e9b184e72bf250db3fd"
   },
-  "integration": "Pristine upstream files; MarkFont-specific adapter generated outside vendor by app/UI/prepare_theseus_tabbar.py."
+  "integration": "All pinned upstream Swift and Metal files are compiled directly without generated derivatives. MarkFont supplies destinations and placement through public API; only Bundle.module resource lookup is generated."
 }

@@ -42,13 +42,10 @@ Licensed under the Apache License, Version 2.0. The complete upstream license
 and attribution notice are retained in `vendor/Theseus/LICENSE` and
 `vendor/Theseus/NOTICE`; `vendor/Theseus/UPSTREAM.json` records file SHA-256s.
 
-Vendor files remain byte-for-byte upstream. At build time MarkFont's
-`app/UI/prepare_theseus_tabbar.py` and `app/UI/theseus_geometry.py` verify pinned
-inputs and emit derivatives of TheseusTabBar, TheseusView, TheseusRenderer and
-CaptureCompensation outside vendor. Changes adapt slot/lens geometry, transparent
-Metal host extent, capture coordinates, rounded capture-only replacements,
-transactional capture swaps and moving-lens feedback exclusions. Original shader,
-material/color/refraction parameters and gesture springs are retained. The tab-bar
-derivative appends programmatic selection and lifecycle bridging. These generated
-files are modified derivatives, not byte-identical upstream implementations.
-See `THESEUS-INTEGRATION.md`.
+All 33 upstream Swift files and the Metal shader are compiled directly from
+`vendor/Theseus/Sources/Theseus`, byte-for-byte as pinned above. No control,
+renderer, capture or geometry derivatives are generated. MarkFont's separate
+Objective-C-visible wrapper supplies four destinations and positions the control
+through public API. The only generated Swift source supplies `Bundle.module`
+resource lookup for this non-SwiftPM build. Upstream LICENSE and NOTICE accompany
+the resource bundle. See `THESEUS-INTEGRATION.md`.

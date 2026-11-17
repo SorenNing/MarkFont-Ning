@@ -15,20 +15,17 @@ FontManager_FILES = main.m FMAppDelegate.m FMDeviceProfileWorkspace.m \
     ../shared/FMFileStore.m ../shared/FMHelperClient.m \
     ../shared/FMFontSlotCatalog.m ../shared/FMMixFontProfile.m \
     ../shared/FMMountTarget.m
-# Compile upstream and the ObjC-visible bridge as one module (FontManager).
-# The original tab bar is replaced only in build output by the UI generator.
+# Compile every pinned upstream Swift file directly, including the tab bar,
+# renderer, view and capture code. No modified derivatives are compiled.
 MARKFONT_THESEUS_ROOT := ../vendor/Theseus/Sources/Theseus
-# Swift inputs are identical across recursive architecture passes.
+# The only generated Swift file supplies SwiftPM's Bundle.module resource lookup.
 MARKFONT_THESEUS_GENERATED := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/generated
-MARKFONT_THESEUS_TABBAR := $(MARKFONT_THESEUS_GENERATED)/TheseusTabBar.swift
 MARKFONT_THESEUS_SHIM := $(MARKFONT_THESEUS_GENERATED)/TheseusBundle.swift
 MARKFONT_THESEUS_BUNDLE := ../.theos/markfont-theseus/$(THEOS_PACKAGE_SCHEME)/$(or $(THEOS_CURRENT_ARCH),universal)/Resources/Theseus_Theseus.bundle
-MARKFONT_THESEUS_SWIFT := $(shell find $(MARKFONT_THESEUS_ROOT) -type f -name '*.swift' ! -path '*/Components/TheseusTabBar.swift' ! -path '*/Core/TheseusView.swift' ! -path '*/Rendering/TheseusRenderer.swift' ! -path '*/Rendering/CaptureCompensation.swift' 2>/dev/null | LC_ALL=C sort)
-MARKFONT_THESEUS_SWIFT += $(addprefix $(MARKFONT_THESEUS_GENERATED)/,TheseusView.swift TheseusRenderer.swift CaptureCompensation.swift)
+MARKFONT_THESEUS_SWIFT := $(shell find $(MARKFONT_THESEUS_ROOT) -type f -name '*.swift' 2>/dev/null | LC_ALL=C sort)
 MARKFONT_THESEUS_METAL := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f -name '*.metal' 2>/dev/null | LC_ALL=C sort)
 MARKFONT_THESEUS_SHADER_INPUTS := $(shell find $(MARKFONT_THESEUS_ROOT)/Shaders -type f 2>/dev/null | LC_ALL=C sort)
-FontManager_FILES += $(MARKFONT_THESEUS_SWIFT) $(MARKFONT_THESEUS_TABBAR) \
-    $(MARKFONT_THESEUS_SHIM) UI/FMTheseusTabBar.swift
+FontManager_FILES += $(MARKFONT_THESEUS_SWIFT) $(MARKFONT_THESEUS_SHIM) UI/FMTheseusTabBar.swift
 FontManager_SWIFT_VERSION = 5
 # ObjC uses its explicit @interface; no import of FontManager-Swift.h is needed.
 # Theos may still emit that header as part of its normal mixed-language rule.
@@ -49,12 +46,12 @@ FontManager_RESOURCE_DIRS = Resources
 
 # Theos enumerates Swift inputs and checks __USER_FILES in its own independent
 # before-FontManager-all:: recipe. A later double-colon prerequisite cannot
-# order generation before that check. Prepare only lightweight Swift sources
-# synchronously, before application.mk, for direct and recursive developer make.
+# order generation before that check. Verify the pinned upstream files and
+# prepare only Bundle.module before application.mk; never generate controls.
 # $(shell) does not propagate failures, so capture and check the exit status.
 # A clean-only invocation must remain usable even with missing vendor inputs.
 ifneq ($(if $(MAKECMDGOALS),$(filter-out clean internal-clean after-clean,$(MAKECMDGOALS)),all),)
-MARKFONT_THESEUS_PREPARE_STATUS := $(shell python3 UI/prepare_theseus_tabbar.py "$(MARKFONT_THESEUS_ROOT)/Components/TheseusTabBar.swift" "$(MARKFONT_THESEUS_TABBAR)" >&2 && bash ../scripts/prepare-theseus-resources shim "$(MARKFONT_THESEUS_SHIM)" >&2; echo $$?)
+MARKFONT_THESEUS_PREPARE_STATUS := $(shell python3 ../scripts/verify-theseus-upstream.py >&2 && bash ../scripts/prepare-theseus-resources shim "$(MARKFONT_THESEUS_SHIM)" >&2; echo $$?)
 ifneq ($(MARKFONT_THESEUS_PREPARE_STATUS),0)
 $(error Theseus Swift source preparation failed (status $(MARKFONT_THESEUS_PREPARE_STATUS)))
 endif

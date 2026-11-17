@@ -98,11 +98,11 @@
     };
     [self.view addSubview:self.tabBar];
     [NSLayoutConstraint activateConstraints:@[
-        [self.tabBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
-        [self.tabBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [self.tabBar.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [self.tabBar.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor constant:16],
+        [self.tabBar.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor constant:-16],
         [self.tabBar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
                                                  constant:-14],
-        [self.tabBar.heightAnchor constraintEqualToConstant:72],
     ]];
 
     [self installSwipeGestures];
