@@ -105,8 +105,8 @@ static const NSTimeInterval FMWorkspaceRecoveryRetryDelay = 1.0;
     // Keep the per-scheme tint but let the shared glass background show
     // through, so the hero reads as a tinted glass card.
     ((CAGradientLayer *)self.layer).colors = @[
-        (id)[first colorWithAlphaComponent:0.42].CGColor,
-        (id)[last colorWithAlphaComponent:0.30].CGColor,
+        (id)[first colorWithAlphaComponent:0.80].CGColor,
+        (id)[last colorWithAlphaComponent:0.62].CGColor,
     ];
 }
 

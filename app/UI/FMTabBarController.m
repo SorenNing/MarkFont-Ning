@@ -6,19 +6,216 @@
 #import "FMProfileLabViewController.h"
 #import "FMSettingsViewController.h"
 
-// Narrow Objective-C declaration for the Swift bridge. Both implementations
-// link into FontManager; no generated Swift header or runtime lookup is needed.
-@interface FMTheseusTabBar : UIView
-- (instancetype)initWithTitles:(NSArray<NSString *> *)titles;
+@interface FMTabItemView : UIControl
+@property(nonatomic, strong) UIImageView *iconView;
+@property(nonatomic, strong) UILabel *glyphLabel;
+@property(nonatomic, strong) UILabel *titleLabel;
+@end
+
+@implementation FMTabItemView
+
+- (instancetype)initWithTitle:(NSString *)title
+                       symbol:(NSString *)symbol
+                        glyph:(NSString *)glyph {
+    self = [super initWithFrame:CGRectZero];
+    if (self == nil) return nil;
+
+    _titleLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    _titleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+    _titleLabel.text = title;
+    _titleLabel.font = [UIFont systemFontOfSize:9.5 weight:UIFontWeightSemibold];
+    _titleLabel.textAlignment = NSTextAlignmentCenter;
+
+    if (glyph.length > 0) {
+        _glyphLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+        _glyphLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        _glyphLabel.text = glyph;
+        _glyphLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightHeavy];
+        _glyphLabel.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:_glyphLabel];
+    } else {
+        _iconView = [[UIImageView alloc] initWithFrame:CGRectZero];
+        _iconView.translatesAutoresizingMaskIntoConstraints = NO;
+        _iconView.contentMode = UIViewContentModeScaleAspectFit;
+        _iconView.image = [UIImage systemImageNamed:symbol];
+        [self addSubview:_iconView];
+    }
+    [self addSubview:_titleLabel];
+
+    UIView *glyphView = _glyphLabel ?: _iconView;
+    [NSLayoutConstraint activateConstraints:@[
+        [glyphView.centerXAnchor constraintEqualToAnchor:self.centerXAnchor],
+        [glyphView.topAnchor constraintEqualToAnchor:self.topAnchor constant:9],
+        [glyphView.widthAnchor constraintGreaterThanOrEqualToConstant:26],
+        [glyphView.heightAnchor constraintEqualToConstant:21],
+        [_titleLabel.leadingAnchor constraintEqualToAnchor:self.leadingAnchor constant:2],
+        [_titleLabel.trailingAnchor constraintEqualToAnchor:self.trailingAnchor constant:-2],
+        [_titleLabel.topAnchor constraintEqualToAnchor:glyphView.bottomAnchor constant:1],
+    ]];
+    self.accessibilityLabel = title;
+    self.accessibilityTraits = UIAccessibilityTraitButton;
+    [self setSelected:NO];
+    return self;
+}
+
+- (void)setSelected:(BOOL)selected {
+    [super setSelected:selected];
+    UIColor *color = selected ? UIColor.labelColor : UIColor.secondaryLabelColor;
+    self.iconView.tintColor = color;
+    self.glyphLabel.textColor = color;
+    self.titleLabel.textColor = color;
+    self.accessibilityTraits = selected
+        ? (UIAccessibilityTraitButton | UIAccessibilityTraitSelected)
+        : UIAccessibilityTraitButton;
+}
+
+@end
+
+@interface FMLiquidTabBarView : UIView
 @property(nonatomic, copy) void (^selectionHandler)(NSInteger index);
 @property(nonatomic, readonly) NSInteger selectedIndex;
 - (void)setSelectedIndex:(NSInteger)index animated:(BOOL)animated;
 @end
 
+@implementation FMLiquidTabBarView {
+    UIVisualEffectView *_blur;
+    UIView *_pill;
+    NSArray<FMTabItemView *> *_items;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self == nil) return nil;
+    self.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:0.08 alpha:0.60]
+                : [UIColor colorWithWhite:1.0 alpha:0.55];
+        }];
+    self.layer.cornerRadius = 36;
+    self.layer.cornerCurve = kCACornerCurveContinuous;
+    self.layer.borderWidth = 0.8 / UIScreen.mainScreen.scale;
+    self.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.75].CGColor;
+    self.layer.shadowColor = [UIColor colorWithRed:0.32
+                                              green:0.20
+                                               blue:0.26
+                                              alpha:1.0].CGColor;
+    self.layer.shadowOpacity = 0.10;
+    self.layer.shadowRadius = 16;
+    self.layer.shadowOffset = CGSizeMake(0, 10);
+    self.clipsToBounds = NO;
+
+    _blur = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect
+            effectWithStyle:UIBlurEffectStyleSystemUltraThinMaterial]];
+    _blur.translatesAutoresizingMaskIntoConstraints = NO;
+    _blur.layer.cornerRadius = 36;
+    _blur.layer.cornerCurve = kCACornerCurveContinuous;
+    _blur.clipsToBounds = YES;
+    _blur.userInteractionEnabled = NO;
+    [self addSubview:_blur];
+    [NSLayoutConstraint activateConstraints:@[
+        [_blur.leadingAnchor constraintEqualToAnchor:self.leadingAnchor],
+        [_blur.trailingAnchor constraintEqualToAnchor:self.trailingAnchor],
+        [_blur.topAnchor constraintEqualToAnchor:self.topAnchor],
+        [_blur.bottomAnchor constraintEqualToAnchor:self.bottomAnchor],
+    ]];
+
+    _pill = [[UIView alloc] initWithFrame:CGRectZero];
+    _pill.backgroundColor = [UIColor colorWithDynamicProvider:
+        ^UIColor *(UITraitCollection *traits) {
+            return traits.userInterfaceStyle == UIUserInterfaceStyleDark
+                ? [UIColor colorWithWhite:0.25 alpha:0.92]
+                : [UIColor colorWithWhite:1.0 alpha:0.88];
+        }];
+    _pill.layer.cornerRadius = 25;
+    _pill.layer.cornerCurve = kCACornerCurveContinuous;
+    _pill.layer.shadowColor = [UIColor colorWithWhite:0.35 alpha:1.0].CGColor;
+    _pill.layer.shadowOpacity = 0.08;
+    _pill.layer.shadowRadius = 8;
+    _pill.layer.shadowOffset = CGSizeMake(0, 3);
+    _pill.userInteractionEnabled = NO;
+    [self addSubview:_pill];
+
+    NSArray<NSArray<NSString *> *> *specs = @[
+        @[ FMLocalized(@"挂载"), @"link", @"" ],
+        @[ FMLocalized(@"字体"), @"", @"Aa" ],
+        @[ FMLocalized(@"字体库"), @"books.vertical", @"" ],
+        @[ FMLocalized(@"设置"), @"gearshape", @"" ],
+    ];
+    NSMutableArray<FMTabItemView *> *items = [NSMutableArray array];
+    [specs enumerateObjectsUsingBlock:^(NSArray<NSString *> *spec,
+                                        NSUInteger index,
+                                        BOOL *stop) {
+        (void)stop;
+        FMTabItemView *item = [[FMTabItemView alloc]
+            initWithTitle:spec[0] symbol:spec[1] glyph:spec[2]];
+        item.tag = (NSInteger)index;
+        [item addTarget:self action:@selector(itemTapped:)
+       forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:item];
+        [items addObject:item];
+    }];
+    _items = items;
+    _selectedIndex = 1;
+    return self;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    CGFloat width = self.bounds.size.width / (CGFloat)_items.count;
+    [_items enumerateObjectsUsingBlock:^(FMTabItemView *item,
+                                         NSUInteger index,
+                                         BOOL *stop) {
+        (void)stop;
+        item.frame = CGRectMake(width * index, 7.0, width, self.bounds.size.height - 14.0);
+    }];
+    _pill.frame = CGRectInset(_items[(NSUInteger)_selectedIndex].frame, 4, 4);
+}
+
+- (void)itemTapped:(FMTabItemView *)sender {
+    NSInteger index = sender.tag;
+    if (index == _selectedIndex) return;
+    [self setSelectedIndex:index animated:YES];
+    if (self.selectionHandler != nil) self.selectionHandler(index);
+}
+
+- (void)setSelectedIndex:(NSInteger)index {
+    [self setSelectedIndex:index animated:NO];
+}
+
+- (void)setSelectedIndex:(NSInteger)index animated:(BOOL)animated {
+    if (index < 0 || index >= (NSInteger)_items.count) return;
+    _selectedIndex = index;
+    [_items enumerateObjectsUsingBlock:^(FMTabItemView *item,
+                                         NSUInteger itemIndex,
+                                         BOOL *stop) {
+        (void)stop;
+        [item setSelected:(NSInteger)itemIndex == index];
+    }];
+    void (^updates)(void) = ^{
+        self->_pill.frame = CGRectInset(self->_items[(NSUInteger)index].frame, 4, 4);
+    };
+    if (animated && !UIAccessibilityIsReduceMotionEnabled()) {
+        [UIView animateWithDuration:0.32
+                              delay:0
+             usingSpringWithDamping:0.82
+              initialSpringVelocity:0.4
+                            options:UIViewAnimationOptionBeginFromCurrentState |
+                                    UIViewAnimationOptionAllowUserInteraction
+                         animations:updates
+                         completion:nil];
+    } else {
+        updates();
+    }
+}
+
+@end
+
 @interface FMTabBarController ()
 @property(nonatomic, strong) id<FMProfileWorkspace> workspace;
 @property(nonatomic, strong) NSArray<UINavigationController *> *controllers;
-@property(nonatomic, strong) FMTheseusTabBar *tabBar;
+@property(nonatomic, strong) FMLiquidTabBarView *tabBar;
 @property(nonatomic, strong) FMProfileLabViewController *fontController;
 @property(nonatomic) NSInteger selectedIndex;
 @end
@@ -88,21 +285,18 @@
     }
     self.controllers = navigations;
 
-    self.tabBar = [[FMTheseusTabBar alloc] initWithTitles:@[
-        FMLocalized(@"挂载"), FMLocalized(@"字体"),
-        FMLocalized(@"字体库"), FMLocalized(@"设置"),
-    ]];
+    self.tabBar = [[FMLiquidTabBarView alloc] initWithFrame:CGRectZero];
     self.tabBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.tabBar.selectionHandler = ^(NSInteger index) {
         [weakSelf switchToIndex:index animated:YES];
     };
     [self.view addSubview:self.tabBar];
     [NSLayoutConstraint activateConstraints:@[
-        [self.tabBar.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
-        [self.tabBar.leadingAnchor constraintGreaterThanOrEqualToAnchor:self.view.leadingAnchor constant:16],
-        [self.tabBar.trailingAnchor constraintLessThanOrEqualToAnchor:self.view.trailingAnchor constant:-16],
+        [self.tabBar.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:16],
+        [self.tabBar.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-16],
         [self.tabBar.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor
                                                  constant:-14],
+        [self.tabBar.heightAnchor constraintEqualToConstant:72],
     ]];
 
     [self installSwipeGestures];
@@ -110,19 +304,17 @@
 }
 
 - (void)installSwipeGestures {
-    // UINavigationController owns the interactive edge-pop gesture. A second
-    // full-screen swipe recognizer must not compete with it during back.
-}
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
-       shouldReceiveTouch:(UITouch *)touch {
-    (void)gestureRecognizer;
-    // Theseus owns drags begun on the bar. Navigation owns page back gestures.
-    return NO;
+    UISwipeGestureRecognizer *left = [[UISwipeGestureRecognizer alloc]
+        initWithTarget:self action:@selector(handleTabSwipe:)];
+    left.direction = UISwipeGestureRecognizerDirectionLeft;
+    UISwipeGestureRecognizer *right = [[UISwipeGestureRecognizer alloc]
+        initWithTarget:self action:@selector(handleTabSwipe:)];
+    right.direction = UISwipeGestureRecognizerDirectionRight;
+    [self.view addGestureRecognizer:left];
+    [self.view addGestureRecognizer:right];
 }
 
 - (void)handleTabSwipe:(UISwipeGestureRecognizer *)gesture {
-    if (self.selectedIndex < 0 || self.selectedIndex >= (NSInteger)self.controllers.count) return;
     UINavigationController *current = self.controllers[(NSUInteger)self.selectedIndex];
     if (current.viewControllers.count > 1) {
         // Inside a pushed page the same swipe means "go back".
